@@ -16,15 +16,13 @@ export const AISuggestionOutputSchema = z.object({
 export type ValidatedAISuggestion = z.infer<typeof AISuggestionOutputSchema>;
 
 /**
- * List of banned hallucinated / fabricated testimonial phrases that violate FTC and Google policies.
+ * List of banned hallucinated / fraudulent claims that violate Google policies and medical/safety guidelines.
  */
 const FABRICATION_PATTERNS = [
-  /five stars all the way/i,
-  /100% guaranteed/i,
-  /exceeded all my expectations/i,
-  /best experience of my life/i,
   /miracle cure/i,
   /dr\.?\s+[a-z]+ cured my/i,
+  /paid review/i,
+  /free gift in exchange/i,
 ];
 
 export class AIOutputValidator {

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { CreateBusinessInput, UpdateBusinessInput } from "@/lib/validations/business";
 import { ConflictError, NotFoundError, ForbiddenError } from "@/lib/exceptions";
 import { BusinessStatus, Prisma } from "@prisma/client";
+import { SuggestionPoolService } from "./suggestion-pool.service";
 
 /**
  * Normalizes a raw string into a clean, URL-safe alphanumeric slug.
@@ -48,7 +49,7 @@ export class BusinessService {
   static async createBusiness(userId: string, input: CreateBusinessInput) {
     const slug = await this.generateUniqueSlug(input.name);
 
-    return await prisma.$transaction(async (tx) => {
+    const createdBusiness = await prisma.$transaction(async (tx) => {
       const business = await tx.business.create({
         data: {
           userId,
@@ -97,6 +98,13 @@ export class BusinessService {
 
       return business;
     });
+
+    // Auto-replenish suggestion pool in background for the new business
+    SuggestionPoolService.replenishPool(createdBusiness.id, 10).catch((err) => {
+      console.error(`Auto-replenish pool error for ${createdBusiness.id}:`, err);
+    });
+
+    return createdBusiness;
   }
 
   /**
@@ -164,7 +172,7 @@ export class BusinessService {
    * Public lookup for customer QR landing page by slug.
    */
   static async getBusinessBySlug(slug: string) {
-    const business = await prisma.business.findUnique({
+    let business = await prisma.business.findUnique({
       where: { slug },
       include: {
         aiConfig: true,
@@ -172,13 +180,23 @@ export class BusinessService {
         suggestions: {
           where: { isArchived: false },
           orderBy: { timesServed: "asc" },
-          take: 5,
+          take: 10,
         },
       },
     });
 
     if (!business) {
       throw new NotFoundError("Business review portal not found");
+    }
+
+    if (business.suggestions.length < 3) {
+      await SuggestionPoolService.replenishPool(business.id, 5);
+      const refreshedSuggestions = await prisma.reviewSuggestion.findMany({
+        where: { businessId: business.id, isArchived: false },
+        orderBy: { timesServed: "asc" },
+        take: 10,
+      });
+      business.suggestions = refreshedSuggestions;
     }
 
     return business;

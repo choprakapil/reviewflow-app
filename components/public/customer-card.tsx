@@ -36,7 +36,7 @@ export function CustomerCard({
   const [customerHighlight, setCustomerHighlight] = useState("");
   const [currentText, setCurrentText] = useState(
     initialSuggestions[0]?.suggestionText ||
-      `${businessName} — [Describe the service you received]. [Add what you personally experienced and what you would like others to know].`
+      `Had a great experience with ${businessName}! The team was very professional, friendly, and easy to work with. Highly recommend their services!`
   );
 
   function cycleSuggestion() {
@@ -51,14 +51,14 @@ export function CustomerCard({
     setCustomerHighlight(newHighlight);
 
     const servicePart = newService.trim()
-      ? `I visited for ${newService.trim()}. `
-      : "[Describe the service you received]. ";
+      ? `I used ${businessName} for ${newService.trim()} and was very impressed. `
+      : `Had a great experience with ${businessName}. `;
     const highlightPart = newHighlight.trim()
-      ? `${newHighlight.trim()}. `
-      : "[Add what you personally experienced]. ";
-    const closingPart = "[Share any recommendations or helpful tips for other customers].";
+      ? `Their team was ${newHighlight.trim().toLowerCase()}. `
+      : "The staff was very friendly and professional. ";
+    const closingPart = "Definitely recommend them to anyone!";
 
-    setCurrentText(`${businessName} — ${servicePart}${highlightPart}${closingPart}`);
+    setCurrentText(`${servicePart}${highlightPart}${closingPart}`);
   }
 
   return (
@@ -91,7 +91,7 @@ export function CustomerCard({
       {/* 2. Intro Helper Text */}
       <div className="text-center px-2">
         <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-normal">
-          Draft your genuine review below. Customize this editable framework to reflect your authentic experience:
+          Tap the review below to customize or click to copy and post directly on Google:
         </p>
       </div>
 
@@ -163,11 +163,11 @@ export function CustomerCard({
       <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-5 shadow-sm space-y-3 relative group">
         <div className="flex items-center justify-between text-[11px] text-zinc-400 border-b border-zinc-100 dark:border-zinc-800 pb-2">
           <span className="font-medium text-zinc-500 uppercase tracking-wider">
-            Editable Draft Framework
+            Suggested Review
           </span>
           <span className="inline-flex items-center gap-1 text-zinc-400">
             <Edit3 className="w-3 h-3" />
-            <span>Tap text to customize</span>
+            <span>Tap to edit</span>
           </span>
         </div>
 

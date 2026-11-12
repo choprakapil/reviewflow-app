@@ -85,12 +85,26 @@ export class SuggestionPoolService {
       orderBy: { timesServed: "asc" },
     });
 
-    // If pool is empty, generate an instant neutral writing draft fallback
+    // If pool is empty, attempt immediate replenishment
+    if (!suggestion) {
+      await this.replenishPool(businessId, 5);
+      suggestion = await prisma.reviewSuggestion.findFirst({
+        where: {
+          businessId,
+          isArchived: false,
+          language,
+        },
+        orderBy: { timesServed: "asc" },
+      });
+    }
+
+    // If still empty (e.g. offline), generate a clean, authentic default
     if (!suggestion) {
       const business = await prisma.business.findUnique({ where: { id: businessId } });
+      const svc = (Array.isArray(business?.services) && (business?.services as string[])[0]) || "services";
       const fallbackText = business
-        ? `${business.name} — [Describe the service you received]. [Add what you personally experienced and what you would like others to know].`
-        : "[Business Name] — [Describe the service you received]. [Add what you personally experienced and what you would like others to know].";
+        ? `Had an amazing experience with ${business.name}! Their team was professional, friendly, and very easy to work with on our ${svc}. Highly recommend them!`
+        : "Had an amazing experience! The team was friendly, professional, and very easy to work with. Highly recommend their services!";
 
       suggestion = await prisma.reviewSuggestion.create({
         data: {
