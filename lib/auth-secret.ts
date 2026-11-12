@@ -21,3 +21,4 @@ export function getAuthSecret(): string {
   // Development / test fallback only
   return secret || "dev-insecure-secret-for-local-testing-only-replace-in-production-12345";
 }
+

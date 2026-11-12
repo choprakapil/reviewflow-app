@@ -77,3 +77,4 @@ Automated tests in `tests/unit/auth-db.test.ts` verify all 6 authentication inva
 4. `rejects inactive database user`: **PASSED**
 5. `strictly rejects hardcoded default passwords or bypass attempts`: **PASSED**
 6. `enforces strict NEXTAUTH_SECRET validation in production`: **PASSED**
+

@@ -33,3 +33,4 @@ Phase 18 was initiated following an independent source-code inspection that unco
 | **Seed Process** | `prisma/seed.ts` | Hardcoded plaintext password & fake reviews | `ADMIN_BOOTSTRAP_PASSWORD` env var, no credentials in logs, neutral synthetic demo drafts |
 | **Analytics Privacy**| `app/api/analytics/track/route.ts`, `lib/analytics-crypto.ts` | Static daily salt & arbitrary metadata storage | Dynamic UTC date, HMAC with server secret, explicit event allowlist, 16KB payload cap |
 | **Rate Limiting** | `lib/rate-limit.ts`, `middleware.ts` | Spoofable headers & unbounded memory growth | Strict IP regex extraction, 10,000 max capacity pruning, trusted proxy header prioritization |
+

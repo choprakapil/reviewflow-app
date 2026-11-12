@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Settings, Sparkles, Key, Shield, CheckCircle2, Server, Save } from "lucide-react";
+import { Settings, Sparkles, Key, Shield, CheckCircle2, Server, Save, Play, Loader2, AlertCircle } from "lucide-react";
+
+interface TestAiResult {
+  providerUsed: string;
+  model: string;
+  latencyMs: number;
+  sampleReviewText: string;
+  targetedService?: string;
+}
 
 export default function SettingsPage() {
   const [geminiKey, setGeminiKey] = useState("");
@@ -10,10 +18,42 @@ export default function SettingsPage() {
   const [defaultStyle, setDefaultStyle] = useState("NATURAL");
   const [isSaved, setIsSaved] = useState(false);
 
+  const [isTestingAi, setIsTestingAi] = useState(false);
+  const [testResult, setTestResult] = useState<TestAiResult | null>(null);
+  const [testError, setTestError] = useState<string | null>(null);
+
   function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 3000);
+  }
+
+  async function handleTestAi() {
+    setIsTestingAi(true);
+    setTestError(null);
+    setTestResult(null);
+
+    try {
+      const res = await fetch("/api/admin/settings/test-ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          geminiKey: geminiKey || undefined,
+          groqKey: groqKey || undefined,
+        }),
+      });
+
+      const json = await res.json();
+      if (json.success) {
+        setTestResult(json.data);
+      } else {
+        setTestError(json.error?.message || "AI Test Bench request failed");
+      }
+    } catch (err: unknown) {
+      setTestError(err instanceof Error ? err.message : "Network error testing AI");
+    } finally {
+      setIsTestingAi(false);
+    }
   }
 
   return (
@@ -83,6 +123,60 @@ export default function SettingsPage() {
                 className="w-full px-3.5 py-2.5 text-sm bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white font-mono focus:ring-2 focus:ring-blue-600 focus:outline-none"
               />
             </div>
+
+            {/* Test Bench Action */}
+            <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="text-xs text-zinc-500">
+                Run an end-to-end latency & failover test with current credentials
+              </div>
+              <button
+                type="button"
+                onClick={handleTestAi}
+                disabled={isTestingAi}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white text-xs font-semibold transition-all disabled:opacity-50 self-start sm:self-auto"
+              >
+                {isTestingAi ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                    <span>Testing AI Cascade...</span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Run AI Test Bench</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Test Result Display */}
+            {testResult && (
+              <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+                    Provider: <strong className="text-blue-600">{testResult.providerUsed}</strong> ({testResult.model})
+                  </span>
+                  <span className="font-mono text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
+                    {testResult.latencyMs}ms latency
+                  </span>
+                </div>
+                <p className="text-xs italic text-zinc-600 dark:text-zinc-300 bg-white dark:bg-zinc-900 p-3 rounded-xl border border-zinc-200/60 dark:border-zinc-800">
+                  &ldquo;{testResult.sampleReviewText}&rdquo;
+                </p>
+                <div className="text-[11px] text-zinc-500 flex items-center gap-2">
+                  <span>Targeted Service: {testResult.targetedService || "General"}</span>
+                  <span>•</span>
+                  <span>Model: {testResult.model}</span>
+                </div>
+              </div>
+            )}
+
+            {testError && (
+              <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/40 text-xs text-red-600 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{testError}</span>
+              </div>
+            )}
           </div>
         </div>
 

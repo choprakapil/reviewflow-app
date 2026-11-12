@@ -53,3 +53,4 @@ Integration tests in `tests/integration/tenant-isolation.test.ts` verify tenant 
 | **Unauthenticated Request** | Request without JWT token to admin endpoints | **PASSED (Rejected with 401 Unauthorized)** |
 
 **Suite Result:** 8 / 8 Integration Tests Passed (100%).
+

@@ -69,3 +69,4 @@ Automated tests in `tests/unit/ai-authenticity.test.ts` verify all AI authentici
 8. `instructs LLM to never fabricate customer experiences or 5-star claims`: **PASSED**
 
 **Suite Result:** 8 / 8 Tests Passed (100%).
+

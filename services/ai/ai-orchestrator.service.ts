@@ -62,6 +62,15 @@ export class AIOrchestrator {
     isSuccess: boolean,
     errorMessage?: string
   ) {
+    // Skip persistent database write if businessId is an ephemeral test harness identifier
+    if (businessId.startsWith("test_") || businessId.startsWith("test-")) {
+      logger.debug(
+        { businessId, provider, model, latencyMs, isSuccess },
+        "Ephemeral test bench AI usage recorded"
+      );
+      return;
+    }
+
     try {
       await prisma.aIUsageLog.create({
         data: {
@@ -75,7 +84,7 @@ export class AIOrchestrator {
       });
     } catch (e) {
       // Non-blocking log failure
-      console.error("[AIUsageLog Error]:", e);
+      logger.error({ err: e, businessId }, "Failed to record persistent AIUsageLog");
     }
   }
 }

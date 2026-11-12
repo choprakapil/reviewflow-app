@@ -70,3 +70,4 @@ Automated tests in `tests/unit/analytics-privacy.test.ts` verify all privacy inv
 8. `falls back safely to loopback 127.0.0.1 when no valid IP header is provided`: **PASSED**
 
 **Suite Result:** 8 / 8 Tests Passed (100%).
+

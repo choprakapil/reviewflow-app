@@ -22,3 +22,4 @@ export function getDailyKeyedSalt(dateString?: string): string {
 export function pseudonymizeIp(rawIp: string, salt: string): string {
   return crypto.createHmac("sha256", salt).update(rawIp).digest("hex").slice(0, 32);
 }
+
