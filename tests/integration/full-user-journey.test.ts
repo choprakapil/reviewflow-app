@@ -106,7 +106,7 @@ describe.sequential("ReviewFlow End-to-End User Journey Integration Suite", () =
     expect(firstDraft.length).toBeGreaterThan(20);
     // Verified compliance: contains bracketed placeholder assistance
     expect(firstDraft).toMatch(/\[.*\]/);
-  });
+  }, 20000);
 
   it("Step 4: Customer opens public landing page and retrieves active suggestion", async () => {
     const business = await BusinessService.getBusinessBySlug(testBusinessSlug);

@@ -137,7 +137,7 @@ export class AIOrchestrator {
     } catch (err: unknown) {
       const errorMsg = sanitizeErrorMessage(err instanceof Error ? err.message : String(err));
       logger.warn({ err: errorMsg, businessId }, "Gemini AI failed. Cascading to Groq...");
-      await this.logUsage(businessId, "GEMINI", "gemini-1.5-flash", 0, false, errorMsg);
+      await this.logUsage(businessId, "GEMINI", this.gemini.getModelName(), 0, false, errorMsg);
     }
 
     // Branch C / Fallback: Groq Cloud

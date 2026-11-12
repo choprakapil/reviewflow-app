@@ -7,9 +7,13 @@ export class GeminiProvider implements IAIService {
   private readonly apiKey: string;
   private readonly modelName: string;
 
-  constructor(apiKey?: string, modelName = "gemini-1.5-flash") {
+  constructor(apiKey?: string, modelName?: string) {
     this.apiKey = apiKey || process.env.GEMINI_API_KEY || "";
-    this.modelName = modelName;
+    this.modelName = modelName || process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
+  }
+
+  getModelName(): string {
+    return this.modelName;
   }
 
   async generateSuggestion(params: GenerateReviewParams): Promise<GeneratedReviewOutput> {
@@ -22,7 +26,7 @@ export class GeminiProvider implements IAIService {
     const userPrompt = PromptBuilder.buildUserPrompt(params);
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2500); // 2,500ms timeout guard
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8,000ms timeout guard
 
     try {
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${this.modelName}:generateContent?key=${this.apiKey}`;
@@ -50,7 +54,8 @@ export class GeminiProvider implements IAIService {
 
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(`Gemini API error [${res.status}]: ${errorText.slice(0, 150)}`);
+        const sanitized = errorText.replace(/AQ\.[a-zA-Z0-9_\-]+/g, "[REDACTED_GEMINI_KEY]").replace(/AIzaSy[a-zA-Z0-9_\-]+/g, "[REDACTED_GEMINI_KEY]");
+        throw new Error(`Gemini API error [${res.status}]: ${sanitized.slice(0, 150)}`);
       }
 
       const data = await res.json();
