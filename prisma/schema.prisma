@@ -1,0 +1,189 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  AGENCY_ADMIN
+  STAFF_VIEWER
+}
+
+enum BusinessStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum AIProvider {
+  GEMINI
+  GROQ
+  CLOUDFLARE
+  DETERMINISTIC
+}
+
+enum ReviewLength {
+  SHORT
+  MEDIUM
+  LONG
+}
+
+enum WritingStyle {
+  NATURAL
+  PROFESSIONAL
+  ENTHUSIASTIC
+  SIMPLE
+}
+
+model User {
+  id           String     @id @default(uuid())
+  email        String     @unique
+  passwordHash String
+  fullName     String
+  role         Role       @default(AGENCY_ADMIN)
+  isActive     Boolean    @default(true)
+  businesses   Business[]
+  auditLogs    AuditLog[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([email])
+}
+
+model Business {
+  id                 String             @id @default(uuid())
+  userId             String
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name               String
+  slug               String             @unique
+  category           String
+  description        String?            @db.Text
+  address            String?
+  website            String?
+  phone              String?
+  googlePlaceId      String?
+  googleReviewUrl    String             @db.Text
+  logoUrl            String?
+  keywords           Json               @default("[]")
+  services           Json               @default("[]")
+  factualHighlights  Json               @default("[]")
+  defaultLanguage    String             @default("en")
+  supportedLanguages Json               @default("[\"en\"]")
+  status             BusinessStatus     @default(ACTIVE)
+  archivedAt         DateTime?
+  aiConfig           AIConfiguration?
+  qrCode             QRCode?
+  suggestions        ReviewSuggestion[]
+  analytics          AnalyticsEvent[]
+  aiUsageLogs        AIUsageLog[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@index([slug])
+  @@index([userId, status])
+  @@index([googlePlaceId])
+}
+
+model AIConfiguration {
+  id                       String       @id @default(uuid())
+  businessId               String       @unique
+  business                 Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  preferredProvider        AIProvider   @default(GEMINI)
+  modelName                String       @default("gemini-2.0-flash")
+  reviewLength             ReviewLength @default(MEDIUM)
+  writingStyle             WritingStyle @default(NATURAL)
+  temperature              Float        @default(0.70)
+  customPromptInstructions String?      @db.Text
+  autoReplenishPool        Boolean      @default(true)
+  poolTargetSize           Int          @default(10)
+  updatedAt                DateTime     @updatedAt
+}
+
+model QRCode {
+  id                   String   @id @default(uuid())
+  businessId           String   @unique
+  business             Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  permanentShortUrl    String   @unique
+  errorCorrectionLevel String   @default("M")
+  foregroundColor      String   @default("#000000")
+  backgroundColor      String   @default("#FFFFFF")
+  hasLogoCenter        Boolean  @default(false)
+  qrSvgUrl             String?  @db.Text
+  qrPngHighResUrl      String?  @db.Text
+  printPdfUrl          String?  @db.Text
+  isActive             Boolean  @default(true)
+  generatedAt          DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model ReviewSuggestion {
+  id              String       @id @default(uuid())
+  businessId      String
+  business        Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  suggestionText  String       @db.Text
+  language        String       @default("en")
+  lengthCategory  ReviewLength @default(MEDIUM)
+  targetedService String?
+  providerUsed    String
+  modelUsed       String
+  timesServed     Int          @default(0)
+  timesCopied     Int          @default(0)
+  isArchived      Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+
+  @@index([businessId, isArchived, language])
+}
+
+model AnalyticsEvent {
+  id         String   @id @default(uuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  eventType  String
+  hashedIp   String?
+  country    String?
+  city       String?
+  userAgent  String?  @db.Text
+  deviceType String?
+  os         String?
+  browser    String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([businessId, createdAt, eventType])
+}
+
+model AIUsageLog {
+  id           String   @id @default(uuid())
+  businessId   String
+  business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  provider     String
+  model        String
+  inputTokens  Int      @default(0)
+  outputTokens Int      @default(0)
+  latencyMs    Int
+  isSuccess    Boolean
+  errorMessage String?  @db.Text
+  createdAt    DateTime @default(now())
+
+  @@index([businessId, createdAt])
+}
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action         String
+  targetEntity   String
+  targetEntityId String
+  previousState  Json?
+  newState       Json?
+  ipAddress      String?
+  createdAt      DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
