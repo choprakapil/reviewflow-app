@@ -9,7 +9,8 @@ import {
   Check, 
   Loader2,
   Sliders,
-  Sparkles
+  Sparkles,
+  Save
 } from "lucide-react";
 
 interface BusinessOption {
@@ -46,31 +47,53 @@ export default function QRStudioPage() {
     fetchBusinesses();
   }, []);
 
-  useEffect(() => {
-    if (!selectedId) return;
-
-    async function loadQR() {
-      setIsLoading(true);
-      try {
-        const res = await fetch(`/api/admin/businesses/${selectedId}/qr`);
-        const json = await res.json();
-        if (json.success) {
-          setQrSvg(json.data.svg);
-          setPngDataUrl(json.data.pngDataUrl);
-          setLandingUrl(json.data.landingUrl);
-          if (json.data.config) {
-            setForegroundColor(json.data.config.foregroundColor || "#000000");
-            setBackgroundColor(json.data.config.backgroundColor || "#FFFFFF");
-          }
+  async function loadQR(idToLoad = selectedId) {
+    if (!idToLoad) return;
+    setIsLoading(true);
+    try {
+      const res = await fetch(`/api/admin/businesses/${idToLoad}/qr`);
+      const json = await res.json();
+      if (json.success) {
+        setQrSvg(json.data.svg);
+        setPngDataUrl(json.data.pngDataUrl);
+        setLandingUrl(json.data.landingUrl);
+        if (json.data.config) {
+          setForegroundColor(json.data.config.foregroundColor || "#000000");
+          setBackgroundColor(json.data.config.backgroundColor || "#FFFFFF");
         }
-      } catch (err) {
-        console.error("Failed to load QR code:", err);
-      } finally {
-        setIsLoading(false);
       }
+    } catch (err) {
+      console.error("Failed to load QR code:", err);
+    } finally {
+      setIsLoading(false);
     }
-    loadQR();
+  }
+
+  useEffect(() => {
+    if (selectedId) {
+      loadQR(selectedId);
+    }
   }, [selectedId]);
+
+  async function savePalette() {
+    if (!selectedId) return;
+    setIsSaving(true);
+    try {
+      const res = await fetch(`/api/admin/businesses/${selectedId}/qr`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ foregroundColor, backgroundColor }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        await loadQR(selectedId);
+      }
+    } catch (err) {
+      console.error("Failed to save QR palette:", err);
+    } finally {
+      setIsSaving(false);
+    }
+  }
 
   function downloadSvg() {
     if (!qrSvg) return;
@@ -170,6 +193,25 @@ export default function QRStudioPage() {
                 </div>
               </div>
             </div>
+
+            <button
+              type="button"
+              onClick={savePalette}
+              disabled={isSaving || isLoading}
+              className="mt-3 w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-xl transition-colors disabled:opacity-50"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Updating Matrix...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Save QR Colors</span>
+                </>
+              )}
+            </button>
           </div>
 
           <div className="space-y-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">

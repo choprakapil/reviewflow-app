@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { CreateBusinessDialog } from "@/components/business/create-business-dialog";
+import { EditBusinessDialog } from "@/components/business/edit-business-dialog";
 import { 
   Building2, 
   Search, 
@@ -10,7 +11,6 @@ import {
   Archive, 
   RotateCcw, 
   Trash2, 
-  AlertCircle,
   Loader2 
 } from "lucide-react";
 import Link from "next/link";
@@ -20,9 +20,13 @@ interface BusinessItem {
   name: string;
   slug: string;
   category: string;
-  address?: string;
+  address?: string | null;
+  phone?: string | null;
+  website?: string | null;
   status: "ACTIVE" | "INACTIVE" | "ARCHIVED";
   googleReviewUrl: string;
+  keywords?: string[] | unknown;
+  services?: string[] | unknown;
   qrCode?: {
     permanentShortUrl: string;
     isActive: boolean;
@@ -67,7 +71,7 @@ export default function BusinessesPage() {
     try {
       await fetch(`/api/admin/businesses/${id}/archive`, { method: "POST" });
       loadBusinesses();
-    } catch (err) {
+    } catch {
       alert("Failed to archive business");
     }
   }
@@ -76,8 +80,28 @@ export default function BusinessesPage() {
     try {
       await fetch(`/api/admin/businesses/${id}/restore`, { method: "POST" });
       loadBusinesses();
-    } catch (err) {
+    } catch {
       alert("Failed to restore business");
+    }
+  }
+
+  async function deleteBusiness(id: string, name: string) {
+    if (
+      !confirm(
+        `Are you sure you want to PERMANENTLY delete "${name}"?\n\nThis will remove all generated review suggestions, dynamic QR codes, and analytics tracking. This cannot be undone.`
+      )
+    ) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/admin/businesses/${id}`, { method: "DELETE" });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json?.error?.message || "Failed to delete business");
+      }
+      loadBusinesses();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Failed to delete business");
     }
   }
 
@@ -181,7 +205,7 @@ export default function BusinessesPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 self-end sm:self-center">
+                <div className="flex items-center gap-2 self-end sm:self-center">
                   <Link
                     href={`/r/${biz.slug}`}
                     target="_blank"
@@ -192,10 +216,14 @@ export default function BusinessesPage() {
                     <ExternalLink className="w-3 h-3 text-zinc-400" />
                   </Link>
 
+                  {/* Edit Button Dialog */}
+                  <EditBusinessDialog business={biz} onSuccess={loadBusinesses} />
+
+                  {/* Archive / Restore Button */}
                   {biz.status === "ACTIVE" ? (
                     <button
                       onClick={() => archiveBusiness(biz.id)}
-                      className="p-2 text-zinc-400 hover:text-amber-600 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      className="p-2 text-zinc-400 hover:text-amber-600 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                       title="Archive / Pause Business"
                     >
                       <Archive className="w-4 h-4" />
@@ -203,12 +231,21 @@ export default function BusinessesPage() {
                   ) : (
                     <button
                       onClick={() => restoreBusiness(biz.id)}
-                      className="p-2 text-zinc-400 hover:text-emerald-600 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      className="p-2 text-zinc-400 hover:text-emerald-600 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                       title="Restore Business"
                     >
                       <RotateCcw className="w-4 h-4" />
                     </button>
                   )}
+
+                  {/* Hard Delete Button */}
+                  <button
+                    onClick={() => deleteBusiness(biz.id, biz.name)}
+                    className="p-2 text-zinc-400 hover:text-red-600 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                    title="Delete Business Permanently"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             ))}
@@ -218,4 +255,3 @@ export default function BusinessesPage() {
     </main>
   );
 }
-

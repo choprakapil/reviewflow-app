@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Settings, Sparkles, Key, Shield, CheckCircle2, Server, Save, Play, Loader2, AlertCircle } from "lucide-react";
 
 interface TestAiResult {
@@ -17,15 +17,52 @@ export default function SettingsPage() {
   const [defaultLength, setDefaultLength] = useState("MEDIUM");
   const [defaultStyle, setDefaultStyle] = useState("NATURAL");
   const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [geminiMasked, setGeminiMasked] = useState("");
+  const [openRouterMasked, setOpenRouterMasked] = useState("");
 
   const [isTestingAi, setIsTestingAi] = useState(false);
   const [testResult, setTestResult] = useState<TestAiResult | null>(null);
   const [testError, setTestError] = useState<string | null>(null);
 
-  function handleSave(e: React.FormEvent) {
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const res = await fetch("/api/admin/settings");
+        const json = await res.json();
+        if (json.success) {
+          setGeminiMasked(json.data.geminiKeyMasked || "");
+          setOpenRouterMasked(json.data.openRouterKeyMasked || "");
+        }
+      } catch (err) {
+        console.error("Failed to load settings:", err);
+      }
+    }
+    loadSettings();
+  }, []);
+
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          geminiKey: geminiKey || undefined,
+          openRouterKey: openRouterKey || undefined,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setIsSaved(true);
+        setTimeout(() => setIsSaved(false), 3000);
+      }
+    } catch (err) {
+      alert("Failed to save settings");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   async function handleTestAi() {
@@ -100,7 +137,7 @@ export default function SettingsPage() {
                 type="password"
                 value={geminiKey}
                 onChange={(e) => setGeminiKey(e.target.value)}
-                placeholder="AIzaSy..."
+                placeholder={geminiMasked ? `Configured (${geminiMasked})` : "Enter Gemini API key..."}
                 className="w-full px-3.5 py-2.5 text-sm bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white font-mono focus:ring-2 focus:ring-blue-600 focus:outline-none"
               />
             </div>
@@ -119,7 +156,7 @@ export default function SettingsPage() {
                 type="password"
                 value={openRouterKey}
                 onChange={(e) => setOpenRouterKey(e.target.value)}
-                placeholder="sk-or-v1-..."
+                placeholder={openRouterMasked ? `Configured (${openRouterMasked})` : "Enter OpenRouter API key..."}
                 className="w-full px-3.5 py-2.5 text-sm bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white font-mono focus:ring-2 focus:ring-blue-600 focus:outline-none"
               />
             </div>
@@ -260,10 +297,20 @@ export default function SettingsPage() {
           )}
           <button
             type="submit"
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition-all shadow-sm active:scale-98"
+            disabled={isSaving}
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition-all shadow-sm active:scale-98 disabled:opacity-50"
           >
-            <Save className="w-4 h-4" />
-            <span>Save Configuration</span>
+            {isSaving ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Saving...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                <span>Save Configuration</span>
+              </>
+            )}
           </button>
         </div>
       </form>
