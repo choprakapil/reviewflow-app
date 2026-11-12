@@ -22,6 +22,8 @@ enum BusinessStatus {
 enum AIProvider {
   GEMINI
   GROQ
+  OPENROUTER
+  OLLAMA
   CLOUDFLARE
   DETERMINISTIC
 }

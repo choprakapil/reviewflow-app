@@ -5,6 +5,8 @@ import { AIOrchestrator } from "@/services/ai/ai-orchestrator.service";
 import { z } from "zod";
 
 const TestAISchema = z.object({
+  openRouterKey: z.string().trim().optional(),
+  openRouterModel: z.string().trim().optional(),
   geminiKey: z.string().trim().optional(),
   groqKey: z.string().trim().optional(),
   businessName: z.string().trim().optional(),
@@ -20,7 +22,12 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const validated = TestAISchema.parse(body);
 
-    const orchestrator = new AIOrchestrator(validated.geminiKey, validated.groqKey);
+    const orchestrator = new AIOrchestrator({
+      openRouterKey: validated.openRouterKey,
+      openRouterModel: validated.openRouterModel,
+      geminiKey: validated.geminiKey,
+      groqKey: validated.groqKey,
+    });
 
     const startTime = Date.now();
     const result = await orchestrator.generateWithFailover("test_sandbox_bench", {

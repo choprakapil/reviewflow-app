@@ -34,7 +34,7 @@ export const CreateBusinessSchema = z.object({
 export const UpdateBusinessSchema = CreateBusinessSchema.partial();
 
 export const UpdateAIConfigSchema = z.object({
-  preferredProvider: z.enum(["GEMINI", "GROQ", "CLOUDFLARE", "DETERMINISTIC"]).default("GEMINI"),
+  preferredProvider: z.enum(["GEMINI", "GROQ", "OPENROUTER", "OLLAMA", "CLOUDFLARE", "DETERMINISTIC"]).default("GEMINI"),
   modelName: z.string().default("gemini-2.0-flash"),
   reviewLength: z.enum(["SHORT", "MEDIUM", "LONG"]).default("MEDIUM"),
   writingStyle: z.enum(["NATURAL", "PROFESSIONAL", "ENTHUSIASTIC", "SIMPLE"]).default("NATURAL"),

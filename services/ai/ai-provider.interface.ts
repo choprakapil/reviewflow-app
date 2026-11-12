@@ -10,16 +10,24 @@ export interface GenerateReviewParams {
   customInstructions?: string;
 }
 
+export type AIProviderName =
+  | "GEMINI"
+  | "GROQ"
+  | "OPENROUTER"
+  | "OLLAMA"
+  | "CLOUDFLARE"
+  | "DETERMINISTIC";
+
 export interface GeneratedReviewOutput {
   reviewText: string;
   targetedService?: string;
-  provider: "GEMINI" | "GROQ" | "CLOUDFLARE" | "DETERMINISTIC";
+  provider: AIProviderName;
   model: string;
   latencyMs: number;
 }
 
 export interface IAIService {
-  readonly providerName: "GEMINI" | "GROQ" | "CLOUDFLARE" | "DETERMINISTIC";
+  readonly providerName: AIProviderName;
   generateSuggestion(params: GenerateReviewParams): Promise<GeneratedReviewOutput>;
 }
 
