@@ -3,19 +3,22 @@ import {
   GeneratedReviewOutput,
   AIProviderName,
 } from "./ai-provider.interface";
-import { OpenRouterProvider } from "./providers/openrouter.provider";
-import { OllamaProvider } from "./providers/ollama.provider";
 import { GeminiProvider } from "./providers/gemini.provider";
+import { OpenRouterProvider } from "./providers/openrouter.provider";
 import { GroqProvider } from "./providers/groq.provider";
+import { OllamaProvider } from "./providers/ollama.provider";
 import { DeterministicProvider } from "./providers/deterministic.provider";
+import { ZeroCostPolicy } from "./zero-cost-policy";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 
 export interface AIOrchestratorConfig {
+  geminiKey?: string;
+  geminiModel?: string;
   openRouterKey?: string;
   openRouterModel?: string;
-  geminiKey?: string;
   groqKey?: string;
+  groqModel?: string;
   ollamaBaseUrl?: string;
   ollamaModel?: string;
 }
@@ -24,6 +27,7 @@ function sanitizeErrorMessage(msg?: string): string | undefined {
   if (!msg) return undefined;
   return msg
     .replace(/sk-or-v1-[a-zA-Z0-9_\-]+/g, "[REDACTED_OPENROUTER_KEY]")
+    .replace(/AQ\.[a-zA-Z0-9_\-]+/g, "[REDACTED_GEMINI_KEY]")
     .replace(/AIzaSy[a-zA-Z0-9_\-]+/g, "[REDACTED_GEMINI_KEY]")
     .replace(/gsk_[a-zA-Z0-9_\-]+/g, "[REDACTED_GROQ_KEY]")
     .replace(/Bearer\s+[a-zA-Z0-9_\-\.]+/gi, "Bearer [REDACTED_TOKEN]")
@@ -32,12 +36,14 @@ function sanitizeErrorMessage(msg?: string): string | undefined {
 }
 
 export class AIOrchestrator {
-  private openrouter: OpenRouterProvider;
-  private ollama: OllamaProvider;
   private gemini: GeminiProvider;
+  private openrouter: OpenRouterProvider;
   private groq: GroqProvider;
+  private ollama: OllamaProvider;
   private deterministic: DeterministicProvider;
+  private hasGeminiKey: boolean;
   private hasOpenRouterKey: boolean;
+  private hasOllama: boolean;
 
   constructor(
     geminiKeyOrConfig?: string | AIOrchestratorConfig,
@@ -58,54 +64,87 @@ export class AIOrchestrator {
 
     const isTestEnv = process.env.NODE_ENV === "test" || Boolean(process.env.VITEST);
 
-    const defaultOpenRouterKey = isTestEnv ? "" : process.env.OPENROUTER_API_KEY || "";
     const defaultGeminiKey = isTestEnv ? "" : process.env.GEMINI_API_KEY || "";
-    const defaultGroqKey = isTestEnv ? "" : process.env.GROQ_API_KEY || "";
+    const defaultOpenRouterKey = isTestEnv ? "" : process.env.OPENROUTER_API_KEY || "";
 
-    const resolvedOpenRouterKey =
-      config.openRouterKey !== undefined ? config.openRouterKey : defaultOpenRouterKey;
     const resolvedGeminiKey =
       config.geminiKey !== undefined ? config.geminiKey : defaultGeminiKey;
-    const resolvedGroqKey =
-      config.groqKey !== undefined ? config.groqKey : defaultGroqKey;
+    const resolvedOpenRouterKey =
+      config.openRouterKey !== undefined ? config.openRouterKey : defaultOpenRouterKey;
 
+    this.hasGeminiKey = Boolean(resolvedGeminiKey);
     this.hasOpenRouterKey = Boolean(resolvedOpenRouterKey);
+    this.hasOllama = Boolean(
+      config.ollamaBaseUrl || (!isTestEnv && process.env.OLLAMA_BASE_URL)
+    );
+
+    this.gemini = new GeminiProvider(
+      resolvedGeminiKey,
+      config.geminiModel || process.env.GEMINI_MODEL || "gemini-3.5-flash-lite"
+    );
 
     this.openrouter = new OpenRouterProvider({
       apiKey: resolvedOpenRouterKey,
-      model: config.openRouterModel || process.env.OPENROUTER_MODEL,
+      model: config.openRouterModel || process.env.OPENROUTER_MODEL || "openrouter/free",
+      freeOnly: true,
     });
 
     this.ollama = new OllamaProvider({
-      baseUrl: config.ollamaBaseUrl || process.env.OLLAMA_BASE_URL,
-      model: config.ollamaModel || process.env.OLLAMA_MODEL,
+      baseUrl: config.ollamaBaseUrl || (isTestEnv ? undefined : process.env.OLLAMA_BASE_URL),
+      model: config.ollamaModel || process.env.OLLAMA_MODEL || "llama3.2",
     });
 
-    this.gemini = new GeminiProvider(resolvedGeminiKey);
-    this.groq = new GroqProvider(resolvedGroqKey);
+    // Groq preserved as adapter only; disabled under ZeroCostPolicy
+    this.groq = new GroqProvider(config.groqKey, config.groqModel);
     this.deterministic = new DeterministicProvider();
   }
 
   /**
-   * Generates a review suggestion with automatic failover cascade:
-   * When OpenRouter is configured:
-   *   1. OpenRouter (Free Router: openrouter/free)
-   *   2. Ollama Local Daemon (if available)
-   *   3. Gemini / Groq (if configured)
-   *   4. Deterministic Local Template (Guaranteed Emergency Fallback)
-   * When OpenRouter is not configured:
-   *   1. Gemini Flash
-   *   2. Groq Llama 3.1
-   *   3. Ollama Local Daemon
-   *   4. Deterministic Local Template
+   * Generates a review suggestion with strict zero-cost failover cascade:
+   * 1. Primary: Google Gemini Free Tier (gemini-3.5-flash-lite)
+   * 2. Secondary: OpenRouter Free Router (openrouter/free)
+   * 3. Final Fallback: Deterministic Neutral Writing Assistant (Guaranteed 100% authentic, zero cost)
+   *
+   * Groq and all paid models/fallbacks are strictly forbidden and rejected server-side.
    */
   async generateWithFailover(
     businessId: string,
     params: GenerateReviewParams
   ): Promise<GeneratedReviewOutput> {
-    // Branch A: OpenRouter configured as primary free router
+    // Enforce zero-cost policy on configured fallback models
+    const fallbackCandidates = [
+      this.gemini.getModelName(),
+      this.openrouter.getModelName(),
+      "neutral-writing-assistant-v2",
+    ];
+    if (this.hasOllama) {
+      fallbackCandidates.splice(2, 0, this.ollama.getModelName());
+    }
+    ZeroCostPolicy.assertFallbackArrayAllowed(fallbackCandidates);
+
+    // Stage 1 (Primary): Google Gemini Free Tier
+    if (this.hasGeminiKey) {
+      try {
+        ZeroCostPolicy.assertProviderAllowed("GEMINI");
+        ZeroCostPolicy.assertModelAllowed("GEMINI", this.gemini.getModelName());
+        const result = await this.gemini.generateSuggestion(params);
+        await this.logUsage(businessId, "GEMINI", result.model, result.latencyMs, true);
+        return result;
+      } catch (err: unknown) {
+        const errorMsg = sanitizeErrorMessage(err instanceof Error ? err.message : String(err));
+        logger.warn(
+          { err: errorMsg, businessId, model: this.gemini.getModelName() },
+          "Primary AI (Gemini free tier) failed or quota exhausted. Cascading to OpenRouter free router..."
+        );
+        await this.logUsage(businessId, "GEMINI", this.gemini.getModelName(), 0, false, errorMsg);
+      }
+    }
+
+    // Stage 2 (Secondary): OpenRouter Free Router
     if (this.hasOpenRouterKey) {
       try {
+        ZeroCostPolicy.assertProviderAllowed("OPENROUTER");
+        ZeroCostPolicy.assertModelAllowed("OPENROUTER", this.openrouter.getModelName());
         const result = await this.openrouter.generateSuggestion(params);
         await this.logUsage(businessId, "OPENROUTER", result.model, result.latencyMs, true);
         return result;
@@ -113,7 +152,7 @@ export class AIOrchestrator {
         const errorMsg = sanitizeErrorMessage(err instanceof Error ? err.message : String(err));
         logger.warn(
           { err: errorMsg, businessId, model: this.openrouter.getModelName() },
-          "Primary AI (OpenRouter free) failed or quota reached. Cascading to Ollama..."
+          "Secondary AI (OpenRouter free) failed or quota reached. Cascading to Deterministic fallback..."
         );
         await this.logUsage(
           businessId,
@@ -124,58 +163,34 @@ export class AIOrchestrator {
           errorMsg
         );
       }
+    }
 
-      // Fallback 1 for OpenRouter: Ollama local daemon
+    // Stage 3 (Local Offline Fallback): Ollama (if configured or enabled)
+    if (this.hasOllama) {
       try {
+        ZeroCostPolicy.assertProviderAllowed("OLLAMA");
+        ZeroCostPolicy.assertModelAllowed("OLLAMA", this.ollama.getModelName());
         const result = await this.ollama.generateSuggestion(params);
         await this.logUsage(businessId, "OLLAMA", result.model, result.latencyMs, true);
         return result;
       } catch (err: unknown) {
         const errorMsg = sanitizeErrorMessage(err instanceof Error ? err.message : String(err));
         logger.warn(
-          { err: errorMsg, businessId },
-          "Secondary AI (Ollama) unavailable. Cascading to secondary cloud / deterministic..."
+          { err: errorMsg, businessId, model: this.ollama.getModelName() },
+          "Ollama local fallback failed or daemon unreachable. Cascading to Deterministic fallback..."
         );
-        await this.logUsage(businessId, "OLLAMA", this.ollama.getModelName(), 0, false, errorMsg);
+        await this.logUsage(
+          businessId,
+          "OLLAMA",
+          this.ollama.getModelName(),
+          0,
+          false,
+          errorMsg
+        );
       }
     }
 
-    // Branch B / Fallback: Google Gemini
-    try {
-      const result = await this.gemini.generateSuggestion(params);
-      await this.logUsage(businessId, "GEMINI", result.model, result.latencyMs, true);
-      return result;
-    } catch (err: unknown) {
-      const errorMsg = sanitizeErrorMessage(err instanceof Error ? err.message : String(err));
-      logger.warn({ err: errorMsg, businessId }, "Gemini AI failed. Cascading to Groq...");
-      await this.logUsage(businessId, "GEMINI", this.gemini.getModelName(), 0, false, errorMsg);
-    }
-
-    // Branch C / Fallback: Groq Cloud
-    try {
-      const result = await this.groq.generateSuggestion(params);
-      await this.logUsage(businessId, "GROQ", result.model, result.latencyMs, true);
-      return result;
-    } catch (err: unknown) {
-      const errorMsg = sanitizeErrorMessage(err instanceof Error ? err.message : String(err));
-      logger.warn({ err: errorMsg, businessId }, "Groq AI failed. Cascading to Ollama/Deterministic...");
-      await this.logUsage(businessId, "GROQ", this.groq.getModelName(), 0, false, errorMsg);
-    }
-
-    // Branch D: Ollama (if not already attempted in Branch A)
-    if (!this.hasOpenRouterKey) {
-      try {
-        const result = await this.ollama.generateSuggestion(params);
-        await this.logUsage(businessId, "OLLAMA", result.model, result.latencyMs, true);
-        return result;
-      } catch (err: unknown) {
-        const errorMsg = sanitizeErrorMessage(err instanceof Error ? err.message : String(err));
-        logger.warn({ err: errorMsg, businessId }, "Ollama unavailable. Cascading to Deterministic...");
-        await this.logUsage(businessId, "OLLAMA", this.ollama.getModelName(), 0, false, errorMsg);
-      }
-    }
-
-    // Guaranteed Emergency Fallback: Deterministic Neutral Writing Assistant (FTC 16 CFR Part 465)
+    // Stage 4 (Final Emergency Fallback): Deterministic Neutral Writing Assistant (FTC 16 CFR Part 465)
     const fallbackResult = await this.deterministic.generateSuggestion(params);
     await this.logUsage(
       businessId,
@@ -195,7 +210,6 @@ export class AIOrchestrator {
     isSuccess: boolean,
     errorMessage?: string
   ) {
-    // Skip persistent database write if businessId is an ephemeral test harness identifier
     if (businessId.startsWith("test_") || businessId.startsWith("test-")) {
       logger.debug(
         { businessId, provider, model, latencyMs, isSuccess },
@@ -216,7 +230,6 @@ export class AIOrchestrator {
         },
       });
     } catch (e) {
-      // Non-blocking log failure
       logger.error({ err: e, businessId }, "Failed to record persistent AIUsageLog");
     }
   }

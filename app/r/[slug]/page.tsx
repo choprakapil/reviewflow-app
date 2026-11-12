@@ -71,6 +71,8 @@ export default async function PublicReviewPage({
         address={business.address}
         googleReviewUrl={business.googleReviewUrl}
         businessSlug={business.slug}
+        services={Array.isArray(business.services) ? (business.services as string[]) : []}
+        askCustomerQuestions={business.aiConfig?.askCustomerQuestions ?? false}
         initialSuggestions={business.suggestions.map((s) => ({
           id: s.id,
           suggestionText: s.suggestionText,

@@ -15,6 +15,37 @@ export class DeterministicProvider implements IAIService {
         ? ` Note on amenities: ${params.factualHighlights[0]}.`
         : "";
 
+    // When Customer Experience Questions are ON and customer provided details,
+    // use strictly customer-provided information without fabricating anything.
+    if (params.askCustomerQuestions && params.customerAnswers) {
+      const answers = params.customerAnswers;
+      const parts: string[] = [];
+      if (answers.serviceReceived) {
+        parts.push(`I visited for ${answers.serviceReceived}.`);
+      } else {
+        parts.push(`[Describe the service or purpose of your visit].`);
+      }
+      if (answers.personalHighlight) {
+        parts.push(`${answers.personalHighlight}.`);
+      } else {
+        parts.push(`[Add your personal observations regarding the staff, quality, and overall service].`);
+      }
+      if (answers.visitContext) {
+        parts.push(`${answers.visitContext}.`);
+      } else {
+        parts.push(`[Share any recommendations or helpful tips for other customers].`);
+      }
+
+      return {
+        reviewText: `${params.businessName} — ${parts.join(" ")}`,
+        targetedService: answers.serviceReceived || service,
+        provider: "DETERMINISTIC",
+        model: "neutral-writing-assistant-v2",
+        latencyMs: Date.now() - startTime,
+      };
+    }
+
+    // Default: Customer Experience Questions OFF
     // Neutral, responsible, customizable writing assistance templates
     // Strictly adheres to FTC 16 CFR Part 465 by providing bracketed drafts rather than fake testimonials
     const templates = [

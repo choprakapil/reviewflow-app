@@ -1,6 +1,7 @@
 import { IAIService, GenerateReviewParams, GeneratedReviewOutput } from "../ai-provider.interface";
 import { PromptBuilder } from "../prompt-builder";
 import { AIOutputValidator } from "../ai-output-validator";
+import { ZeroCostPolicy } from "../zero-cost-policy";
 
 export class GeminiProvider implements IAIService {
   readonly providerName = "GEMINI" as const;
@@ -17,6 +18,9 @@ export class GeminiProvider implements IAIService {
   }
 
   async generateSuggestion(params: GenerateReviewParams): Promise<GeneratedReviewOutput> {
+    ZeroCostPolicy.assertProviderAllowed("GEMINI");
+    ZeroCostPolicy.assertModelAllowed("GEMINI", this.modelName);
+
     if (!this.apiKey) {
       throw new Error("GEMINI_API_KEY is not configured");
     }

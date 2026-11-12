@@ -48,6 +48,7 @@ export class SuggestionPoolService {
           writingStyle: business.aiConfig.writingStyle as WritingStyle,
           language: business.defaultLanguage,
           customInstructions: business.aiConfig.customPromptInstructions || undefined,
+          askCustomerQuestions: business.aiConfig.askCustomerQuestions ?? false,
         });
 
         await prisma.reviewSuggestion.create({

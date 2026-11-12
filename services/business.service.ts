@@ -70,12 +70,13 @@ export class BusinessService {
           aiConfig: {
             create: {
               preferredProvider: "GEMINI",
-              modelName: "gemini-2.0-flash",
+              modelName: "gemini-3.5-flash-lite",
               reviewLength: "MEDIUM",
               writingStyle: "NATURAL",
               temperature: 0.7,
               autoReplenishPool: true,
               poolTargetSize: 10,
+              askCustomerQuestions: false,
             },
           },
           qrCode: {
@@ -166,6 +167,7 @@ export class BusinessService {
     const business = await prisma.business.findUnique({
       where: { slug },
       include: {
+        aiConfig: true,
         qrCode: true,
         suggestions: {
           where: { isArchived: false },

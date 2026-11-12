@@ -34,14 +34,15 @@ export const CreateBusinessSchema = z.object({
 export const UpdateBusinessSchema = CreateBusinessSchema.partial();
 
 export const UpdateAIConfigSchema = z.object({
-  preferredProvider: z.enum(["GEMINI", "GROQ", "OPENROUTER", "OLLAMA", "CLOUDFLARE", "DETERMINISTIC"]).default("GEMINI"),
-  modelName: z.string().default("gemini-2.0-flash"),
+  preferredProvider: z.enum(["GEMINI", "OPENROUTER", "DETERMINISTIC"]).default("GEMINI"),
+  modelName: z.string().default("gemini-3.5-flash-lite"),
   reviewLength: z.enum(["SHORT", "MEDIUM", "LONG"]).default("MEDIUM"),
   writingStyle: z.enum(["NATURAL", "PROFESSIONAL", "ENTHUSIASTIC", "SIMPLE"]).default("NATURAL"),
   temperature: z.number().min(0.0).max(1.0).default(0.7),
   customPromptInstructions: z.string().max(1000).optional(),
   autoReplenishPool: z.boolean().default(true),
   poolTargetSize: z.number().int().min(3).max(25).default(10),
+  askCustomerQuestions: z.boolean().default(false),
 });
 
 export type CreateBusinessInput = z.infer<typeof CreateBusinessSchema>;

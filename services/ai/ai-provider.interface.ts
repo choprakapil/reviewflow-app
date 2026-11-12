@@ -1,3 +1,9 @@
+export interface CustomerExperienceAnswers {
+  serviceReceived?: string;
+  personalHighlight?: string;
+  visitContext?: string;
+}
+
 export interface GenerateReviewParams {
   businessName: string;
   category: string;
@@ -8,6 +14,8 @@ export interface GenerateReviewParams {
   writingStyle: "NATURAL" | "PROFESSIONAL" | "ENTHUSIASTIC" | "SIMPLE";
   language: string;
   customInstructions?: string;
+  askCustomerQuestions?: boolean;
+  customerAnswers?: CustomerExperienceAnswers;
 }
 
 export type AIProviderName =

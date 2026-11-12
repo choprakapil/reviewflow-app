@@ -16,6 +16,8 @@ interface CustomerCardProps {
   address?: string | null;
   googleReviewUrl: string;
   businessSlug: string;
+  services?: string[];
+  askCustomerQuestions?: boolean;
   initialSuggestions: SuggestionItem[];
 }
 
@@ -25,9 +27,13 @@ export function CustomerCard({
   address,
   googleReviewUrl,
   businessSlug,
+  services = [],
+  askCustomerQuestions = false,
   initialSuggestions,
 }: CustomerCardProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [customerService, setCustomerService] = useState("");
+  const [customerHighlight, setCustomerHighlight] = useState("");
   const [currentText, setCurrentText] = useState(
     initialSuggestions[0]?.suggestionText ||
       `${businessName} — [Describe the service you received]. [Add what you personally experienced and what you would like others to know].`
@@ -38,6 +44,21 @@ export function CustomerCard({
     const nextIndex = (currentIndex + 1) % initialSuggestions.length;
     setCurrentIndex(nextIndex);
     setCurrentText(initialSuggestions[nextIndex].suggestionText);
+  }
+
+  function handleAnswerUpdate(newService: string, newHighlight: string) {
+    setCustomerService(newService);
+    setCustomerHighlight(newHighlight);
+
+    const servicePart = newService.trim()
+      ? `I visited for ${newService.trim()}. `
+      : "[Describe the service you received]. ";
+    const highlightPart = newHighlight.trim()
+      ? `${newHighlight.trim()}. `
+      : "[Add what you personally experienced]. ";
+    const closingPart = "[Share any recommendations or helpful tips for other customers].";
+
+    setCurrentText(`${businessName} — ${servicePart}${highlightPart}${closingPart}`);
   }
 
   return (
@@ -73,6 +94,70 @@ export function CustomerCard({
           Draft your genuine review below. Customize this editable framework to reflect your authentic experience:
         </p>
       </div>
+
+      {/* Optional Customer Experience Questionnaire (when enabled for business) */}
+      {askCustomerQuestions && (
+        <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm space-y-3">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+            <span>Optional: Share details from your visit</span>
+          </div>
+          <div className="space-y-2.5">
+            <div>
+              <label className="text-[11px] text-zinc-500 font-medium block mb-1">
+                Which service did you receive?
+              </label>
+              {services.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {services.map((svc) => (
+                    <button
+                      key={svc}
+                      type="button"
+                      onClick={() =>
+                        handleAnswerUpdate(
+                          customerService === svc ? "" : svc,
+                          customerHighlight
+                        )
+                      }
+                      className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                        customerService === svc
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : "bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300"
+                      }`}
+                    >
+                      {svc}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <input
+                  type="text"
+                  placeholder="e.g. Consultation, Routine Care, etc."
+                  value={customerService}
+                  onChange={(e) =>
+                    handleAnswerUpdate(e.target.value, customerHighlight)
+                  }
+                  className="w-full text-xs px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 focus:outline-none"
+                />
+              )}
+            </div>
+
+            <div>
+              <label className="text-[11px] text-zinc-500 font-medium block mb-1">
+                What stood out to you personally?
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Friendly staff, prompt service, clear explanations"
+                value={customerHighlight}
+                onChange={(e) =>
+                  handleAnswerUpdate(customerService, e.target.value)
+                }
+                className="w-full text-xs px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 focus:outline-none"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 3. Hero Element: Review Suggestion Card */}
       <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-5 shadow-sm space-y-3 relative group">

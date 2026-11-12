@@ -95,13 +95,14 @@ model AIConfiguration {
   businessId               String       @unique
   business                 Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
   preferredProvider        AIProvider   @default(GEMINI)
-  modelName                String       @default("gemini-2.0-flash")
+  modelName                String       @default("gemini-3.5-flash-lite")
   reviewLength             ReviewLength @default(MEDIUM)
   writingStyle             WritingStyle @default(NATURAL)
   temperature              Float        @default(0.70)
   customPromptInstructions String?      @db.Text
   autoReplenishPool        Boolean      @default(true)
   poolTargetSize           Int          @default(10)
+  askCustomerQuestions     Boolean      @default(false)
   updatedAt                DateTime     @updatedAt
 }
 

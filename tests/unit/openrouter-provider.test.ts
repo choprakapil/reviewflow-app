@@ -60,7 +60,7 @@ describe("OpenRouter Provider & Safety Verification Suite", () => {
       });
 
       await expect(provider.generateSuggestion(mockParams)).rejects.toThrow(
-        /Paid model ID "openai\/gpt-4o" rejected: OPENROUTER_FREE_ONLY is active/
+        /Paid model.*"openai\/gpt-4o".*rejected/
       );
 
       // Verify zero network calls were dispatched

@@ -13,7 +13,7 @@ interface TestAiResult {
 
 export default function SettingsPage() {
   const [geminiKey, setGeminiKey] = useState("");
-  const [groqKey, setGroqKey] = useState("");
+  const [openRouterKey, setOpenRouterKey] = useState("");
   const [defaultLength, setDefaultLength] = useState("MEDIUM");
   const [defaultStyle, setDefaultStyle] = useState("NATURAL");
   const [isSaved, setIsSaved] = useState(false);
@@ -39,7 +39,7 @@ export default function SettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           geminiKey: geminiKey || undefined,
-          groqKey: groqKey || undefined,
+          openRouterKey: openRouterKey || undefined,
         }),
       });
 
@@ -108,20 +108,28 @@ export default function SettingsPage() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
-                  Groq Cloud API Key (Hot Failover Provider)
+                  OpenRouter API Key (Secondary Free Provider)
                 </label>
                 <span className="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
                   <CheckCircle2 className="w-3 h-3" />
-                  <span>Free Tier: 14,400 req/day</span>
+                  <span>Free Router: openrouter/free</span>
                 </span>
               </div>
               <input
                 type="password"
-                value={groqKey}
-                onChange={(e) => setGroqKey(e.target.value)}
-                placeholder="gsk_..."
+                value={openRouterKey}
+                onChange={(e) => setOpenRouterKey(e.target.value)}
+                placeholder="sk-or-v1-..."
                 className="w-full px-3.5 py-2.5 text-sm bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white font-mono focus:ring-2 focus:ring-blue-600 focus:outline-none"
               />
+            </div>
+
+            {/* Groq Disabled Banner */}
+            <div className="p-3 bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center justify-between">
+              <span className="text-xs text-zinc-500 font-medium">Groq Cloud Integration</span>
+              <span className="text-[11px] px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 font-semibold">
+                Disabled (Zero-Cost Policy)
+              </span>
             </div>
 
             {/* Test Bench Action */}

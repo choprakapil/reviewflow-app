@@ -1,6 +1,7 @@
 import { IAIService, GenerateReviewParams, GeneratedReviewOutput } from "../ai-provider.interface";
 import { PromptBuilder } from "../prompt-builder";
 import { AIOutputValidator } from "../ai-output-validator";
+import { ZeroCostPolicy } from "../zero-cost-policy";
 
 export class GroqProvider implements IAIService {
   readonly providerName = "GROQ" as const;
@@ -17,6 +18,8 @@ export class GroqProvider implements IAIService {
   }
 
   async generateSuggestion(params: GenerateReviewParams): Promise<GeneratedReviewOutput> {
+    // Strictly enforced: Groq is disabled under AI_ALLOW_GROQ=false
+    ZeroCostPolicy.assertProviderAllowed("GROQ");
     if (!this.apiKey) {
       throw new Error("GROQ_API_KEY is not configured");
     }

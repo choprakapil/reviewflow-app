@@ -46,6 +46,16 @@ CRITICAL FTC (16 CFR Part 465) & GOOGLE POLICY COMPLIANCE:
         ? params.services[Math.floor(Math.random() * params.services.length)]
         : undefined;
 
+    const customerSection =
+      params.askCustomerQuestions && params.customerAnswers
+        ? `\n<customer_reported_experience>
+Reported Service: ${params.customerAnswers.serviceReceived || "Not specified"}
+Reported Highlight: ${params.customerAnswers.personalHighlight || "Not specified"}
+Reported Context: ${params.customerAnswers.visitContext || "Not specified"}
+</customer_reported_experience>
+Use ONLY the verified customer-reported information above. For any details not provided by the customer, retain neutral bracketed placeholders (e.g. [Describe...]). NEVER fabricate any experience, interaction, outcome, or sentiment.`
+        : "";
+
     return `<business_context>
 Business Name: ${params.businessName}
 Category: ${params.category}
@@ -57,7 +67,7 @@ Target Language: ${params.language}
 Target Length: ${wordCountGuideline}
 Tone Guidelines: ${styleGuideline}
 Custom Instructions: ${params.customInstructions || "N/A"}
-</business_context>
+</business_context>${customerSection}
 
 Generate an editable, neutral review draft framework in ${params.language} following the format:
 "${params.businessName} — [Describe the service or purpose of your visit]. [Add your personal observations regarding the staff, quality, and overall service]. [Share any recommendations or helpful tips for other customers]."

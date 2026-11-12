@@ -1,6 +1,7 @@
 import { IAIService, GenerateReviewParams, GeneratedReviewOutput } from "../ai-provider.interface";
 import { PromptBuilder } from "../prompt-builder";
 import { AIOutputValidator } from "../ai-output-validator";
+import { ZeroCostPolicy } from "../zero-cost-policy";
 import { logger } from "@/lib/logger";
 
 export interface OpenRouterConfig {
@@ -59,6 +60,9 @@ export class OpenRouterProvider implements IAIService {
   }
 
   async generateSuggestion(params: GenerateReviewParams): Promise<GeneratedReviewOutput> {
+    ZeroCostPolicy.assertProviderAllowed("OPENROUTER");
+    ZeroCostPolicy.assertModelAllowed("OPENROUTER", this.modelName);
+
     if (!this.apiKey) {
       throw new Error("OPENROUTER_API_KEY is not configured on the server");
     }
