@@ -41,3 +41,4 @@ describe("QR & Table Tent Suite", () => {
     expect(html).toContain("Fold along dashed boundary");
   });
 });
+

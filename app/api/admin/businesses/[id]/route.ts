@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
 import { ApiResponse } from "@/lib/api-response";
+import { authenticateAdmin } from "@/lib/auth-guards";
 import { UpdateBusinessSchema } from "@/lib/validations/business";
 import { BusinessService } from "@/services/business.service";
 
@@ -10,11 +10,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-    if (!token?.id) {
-      return ApiResponse.error("Authentication required to access administrative APIs", "UNAUTHORIZED", 401);
-    }
-    const userId = token.id as string;
+    const { userId } = await authenticateAdmin(req);
 
     const business = await BusinessService.getBusinessById(id, userId);
     return ApiResponse.success(business);
@@ -29,11 +25,7 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-    if (!token?.id) {
-      return ApiResponse.error("Authentication required to access administrative APIs", "UNAUTHORIZED", 401);
-    }
-    const userId = token.id as string;
+    const { userId } = await authenticateAdmin(req);
 
     const body = await req.json();
     const validatedData = UpdateBusinessSchema.parse(body);
@@ -51,11 +43,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-    if (!token?.id) {
-      return ApiResponse.error("Authentication required to access administrative APIs", "UNAUTHORIZED", 401);
-    }
-    const userId = token.id as string;
+    const { userId } = await authenticateAdmin(req);
 
     await BusinessService.hardDeleteBusiness(id, userId);
     return ApiResponse.success({ deleted: true, id });
@@ -63,4 +51,3 @@ export async function DELETE(
     return ApiResponse.handle(error, req);
   }
 }
-

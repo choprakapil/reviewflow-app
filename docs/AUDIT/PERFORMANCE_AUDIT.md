@@ -56,3 +56,4 @@ The public customer-facing landing page was audited against mobile-first constra
 | **Live Primary** | Google Gemini Flash | ~1,200ms | 99.9% (2.5s guard) |
 | **Live Hot Secondary** | Groq Llama 3.1 70B | ~280ms | 99.8% (1.5s guard) |
 | **Emergency Fallback**| Deterministic Template | **< 1ms** | **100.0% Guaranteed** |
+

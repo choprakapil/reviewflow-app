@@ -84,12 +84,12 @@ export class SuggestionPoolService {
       orderBy: { timesServed: "asc" },
     });
 
-    // If pool is empty, generate an instant fallback suggestion
+    // If pool is empty, generate an instant neutral writing draft fallback
     if (!suggestion) {
       const business = await prisma.business.findUnique({ where: { id: businessId } });
       const fallbackText = business
-        ? `Visited ${business.name} today. Truly impressed by their professionalism and service. Highly recommended!`
-        : "Exceptional service and friendly staff. Highly recommended!";
+        ? `${business.name} — [Describe the service you received]. [Add what you personally experienced and what you would like others to know].`
+        : "[Business Name] — [Describe the service you received]. [Add what you personally experienced and what you would like others to know].";
 
       suggestion = await prisma.reviewSuggestion.create({
         data: {
@@ -98,7 +98,7 @@ export class SuggestionPoolService {
           language,
           lengthCategory: "SHORT",
           providerUsed: "DETERMINISTIC",
-          modelUsed: "instant-fallback",
+          modelUsed: "neutral-writing-assistant-v2",
           timesServed: 1,
         },
       });

@@ -71,3 +71,4 @@ In `services/ai/prompt-builder.ts`, user-supplied metadata (business name, categ
 ## 4. Test & Verification Summary
 - `tests/unit/ai-failover.test.ts`: Verified failover cascade from primary to secondary and deterministic fallback. (2/2 Passed)
 - `tests/unit/ai-audit.test.ts`: Verified prompt armor, JSON schema parsing, and offline deterministic safety. (5/5 Passed)
+

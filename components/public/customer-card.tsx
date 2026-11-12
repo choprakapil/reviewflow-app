@@ -30,7 +30,7 @@ export function CustomerCard({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentText, setCurrentText] = useState(
     initialSuggestions[0]?.suggestionText ||
-      `I had an outstanding visit to ${businessName}. Professional staff, attentive service, and great results. Highly recommend!`
+      `${businessName} — [Describe the service you received]. [Add what you personally experienced and what you would like others to know].`
   );
 
   function cycleSuggestion() {
@@ -61,20 +61,16 @@ export function CustomerCard({
           {category} {address && `• ${address.split(",")[0]}`}
         </p>
 
-        <div className="flex items-center gap-1 mt-2 text-amber-500">
-          {[...Array(5)].map((_, i) => (
-            <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-          ))}
-          <span className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 ml-1">
-            Google Reviews
-          </span>
+        <div className="flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
+          <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+          <span className="text-[11px] font-medium">Official Google Review Assistant</span>
         </div>
       </div>
 
       {/* 2. Intro Helper Text */}
       <div className="text-center px-2">
         <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-normal">
-          We appreciate your visit today! Here is a personalized draft to make sharing your review on Google effortless:
+          Draft your genuine review below. Customize this editable framework to reflect your authentic experience:
         </p>
       </div>
 
@@ -82,7 +78,7 @@ export function CustomerCard({
       <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-5 shadow-sm space-y-3 relative group">
         <div className="flex items-center justify-between text-[11px] text-zinc-400 border-b border-zinc-100 dark:border-zinc-800 pb-2">
           <span className="font-medium text-zinc-500 uppercase tracking-wider">
-            Suggested Review Draft
+            Editable Draft Framework
           </span>
           <span className="inline-flex items-center gap-1 text-zinc-400">
             <Edit3 className="w-3 h-3" />

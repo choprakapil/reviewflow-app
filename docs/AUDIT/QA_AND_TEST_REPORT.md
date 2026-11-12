@@ -73,3 +73,4 @@ npm run test
 ## 3. Build & Static Analysis Verification
 - `npm run type-check`: `tsc --noEmit` verified with 0 errors.
 - `npm run build`: Next.js production compiler succeeded in 7.9s.
+

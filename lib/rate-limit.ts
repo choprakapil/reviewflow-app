@@ -1,17 +1,23 @@
 /**
  * Token-bucket & sliding-window rate limiting utility.
- * Supports both high-performance in-memory tracking (default/fallback)
+ * Supports both high-performance in-memory tracking (single-node default)
  * and distributed Upstash Redis when environment variables are configured.
+ *
+ * PROXY ARCHITECTURE ASSUMPTIONS:
+ * When deployed behind edge CDNs (Vercel Edge, Cloudflare, CloudFront, AWS ALB),
+ * client IP addresses are prioritized from trusted platform headers (cf-connecting-ip, x-real-ip)
+ * before parsing x-forwarded-for. Arbitrary values in x-forwarded-for are sanitized
+ * against strict IPv4/IPv6 patterns to prevent spoofing and identifier pollution.
  */
 
-interface RateLimitConfig {
+export interface RateLimitConfig {
   /** Maximum number of requests allowed within the window */
   limit: number;
   /** Window duration in seconds */
   windowSeconds: number;
 }
 
-interface RateLimitResult {
+export interface RateLimitResult {
   success: boolean;
   limit: number;
   remaining: number;
@@ -23,9 +29,50 @@ interface MemoryStoreEntry {
   lastRefill: number;
 }
 
+// Strict IPv4 and IPv6 validation regex
+const IPV4_REGEX = /^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
+const IPV6_REGEX = /^(?:[a-fA-F0-9]{1,4}:){7}[a-fA-F0-9]{1,4}$|^::1$|^::$/;
+
+/**
+ * Extracts and sanitizes the client IP address from request headers.
+ * Protects against IP spoofing and invalid identifier injection.
+ */
+export function extractClientIp(
+  headers: Headers | { get(name: string): string | null }
+): string {
+  // 1. Check direct edge-provided trusted client IP headers
+  const cfConnectingIp = headers.get("cf-connecting-ip")?.trim();
+  if (cfConnectingIp && (IPV4_REGEX.test(cfConnectingIp) || IPV6_REGEX.test(cfConnectingIp))) {
+    return cfConnectingIp;
+  }
+
+  const xRealIp = headers.get("x-real-ip")?.trim();
+  if (xRealIp && (IPV4_REGEX.test(xRealIp) || IPV6_REGEX.test(xRealIp))) {
+    return xRealIp;
+  }
+
+  // 2. Parse X-Forwarded-For header
+  const xForwardedFor = headers.get("x-forwarded-for");
+  if (xForwardedFor) {
+    // In typical reverse-proxy setups, the first entry is the client address
+    const ips = xForwardedFor.split(",").map((ip) => ip.trim());
+    for (const rawIp of ips) {
+      // Strip optional port if present (e.g., "192.0.2.1:443")
+      const sanitized = rawIp.replace(/:\d+$/, "");
+      if (IPV4_REGEX.test(sanitized) || IPV6_REGEX.test(sanitized)) {
+        return sanitized;
+      }
+    }
+  }
+
+  // Safe fallback for local development or unidentified clients
+  return "127.0.0.1";
+}
+
 class InMemoryRateLimiter {
   private store = new Map<string, MemoryStoreEntry>();
   private readonly sweepIntervalMs = 60_000;
+  private readonly maxCapacity = 10_000; // Bound memory footprint
 
   constructor() {
     // Periodically sweep expired entries to prevent memory leaks
@@ -48,6 +95,12 @@ class InMemoryRateLimiter {
   public check(identifier: string, config: RateLimitConfig): RateLimitResult {
     const now = Date.now();
     const refillRate = config.limit / (config.windowSeconds * 1000); // tokens per ms
+
+    // Guard against unbounded memory exhaustion: prune oldest if capacity reached
+    if (this.store.size >= this.maxCapacity && !this.store.has(identifier)) {
+      const firstKey = this.store.keys().next().value;
+      if (firstKey) this.store.delete(firstKey);
+    }
 
     let entry = this.store.get(identifier);
 
@@ -97,6 +150,10 @@ class InMemoryRateLimiter {
   public clear(): void {
     this.store.clear();
   }
+
+  public get size(): number {
+    return this.store.size;
+  }
 }
 
 // Global in-memory singleton
@@ -130,7 +187,6 @@ export async function rateLimit(
 
   if (upstashUrl && upstashToken) {
     try {
-      // Basic REST invocation to Upstash Redis
       const key = `ratelimit:${identifier}`;
       const response = await fetch(`${upstashUrl}/pipeline`, {
         method: "POST",
@@ -169,7 +225,7 @@ export async function rateLimit(
         };
       }
     } catch {
-      // Fail open to in-memory rate limiter on Redis timeout/error
+      // Fail open to in-memory rate limiter on Redis timeout/network fault
     }
   }
 

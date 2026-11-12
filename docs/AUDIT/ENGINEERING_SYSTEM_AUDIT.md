@@ -78,3 +78,4 @@ The 15 engineering standards in `docs/ENGINEERING_SYSTEM/` establish enforceable
 
 ## 5. Summary & Governance Recommendations
 The engineering operating system is robust, thoroughly documented, and aligned with enterprise software development best practices.
+

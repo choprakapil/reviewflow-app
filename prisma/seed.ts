@@ -1,16 +1,27 @@
 import { PrismaClient, Role, BusinessStatus, AIProvider, ReviewLength, WritingStyle } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log("Seeding initial database...");
 
-  // 1. Create Super Admin User
-  const adminPasswordHash = await bcrypt.hash("AdminPass123!", 10);
+  // 1. Create or Update Super Admin User
+  // Administrator password MUST be supplied via ADMIN_BOOTSTRAP_PASSWORD or secure random bootstrap
+  const bootstrapPassword =
+    process.env.ADMIN_BOOTSTRAP_PASSWORD ||
+    (process.env.NODE_ENV === "production"
+      ? crypto.randomBytes(16).toString("hex")
+      : "AdminPass123!");
+
+  const adminPasswordHash = await bcrypt.hash(bootstrapPassword, 10);
   const adminUser = await prisma.user.upsert({
     where: { email: "admin@reviewflow.io" },
-    update: {},
+    update: {
+      passwordHash: adminPasswordHash,
+      isActive: true,
+    },
     create: {
       id: "usr_agency_admin_001",
       email: "admin@reviewflow.io",
@@ -21,9 +32,9 @@ async function main() {
     },
   });
 
-  console.log(`Created Super Admin user: ${adminUser.email}`);
+  console.log(`Configured Super Admin user account: ${adminUser.email}`);
 
-  // 2. Create Demo Business: Apex Cosmetic Dental Studio
+  // 2. Create Demo Business: Apex Cosmetic Dental Studio (Identified Synthetic Demo)
   const businessSlug = "apex-dental";
   const business = await prisma.business.upsert({
     where: { slug: businessSlug },
@@ -34,7 +45,7 @@ async function main() {
       name: "Apex Cosmetic Dental Studio",
       slug: businessSlug,
       category: "Dentistry",
-      description: "State-of-the-art cosmetic and restorative dental studio located in San Francisco.",
+      description: "Synthetic demo cosmetic and restorative dental studio located in San Francisco.",
       address: "124 Market St, Suite 200, San Francisco, CA 94105",
       website: "https://apexdentalstudio.example.com",
       phone: "+1 (415) 555-0199",
@@ -57,7 +68,7 @@ async function main() {
           reviewLength: ReviewLength.MEDIUM,
           writingStyle: WritingStyle.NATURAL,
           temperature: 0.7,
-          customPromptInstructions: "Emphasize staff friendliness and comfort.",
+          customPromptInstructions: "Draft structured, customizable review outlines with bracketed placeholders.",
           autoReplenishPool: true,
           poolTargetSize: 10,
         },
@@ -75,32 +86,32 @@ async function main() {
         create: [
           {
             suggestionText:
-              "I had a fantastic experience at Apex Dental Studio for my teeth whitening. The entire staff was warm, gentle, and the results exceeded my expectations. Loved the free patient parking in the rear as well. Highly recommend Dr. Sarah!",
+              "Apex Cosmetic Dental Studio — [Describe the dental service you received, such as Teeth Whitening]. [Add what you personally experienced regarding staff care, comfort, and clinic amenities]. [Include any helpful advice for future patients].",
             language: "en",
             lengthCategory: ReviewLength.MEDIUM,
             targetedService: "Teeth Whitening",
-            providerUsed: "GEMINI",
-            modelUsed: "gemini-2.0-flash",
-            timesServed: 12,
-            timesCopied: 7,
+            providerUsed: "DETERMINISTIC",
+            modelUsed: "neutral-writing-assistant-v2",
+            timesServed: 0,
+            timesCopied: 0,
           },
           {
             suggestionText:
-              "Easily the most comfortable dental visit I've ever had. Painless cleaning, super modern clinic with massage chairs, and zero wait time. Apex Dental sets the standard for dental care in San Francisco.",
+              "Apex Cosmetic Dental Studio — [Routine Hygiene Visit]: [State your impressions of the hygiene appointment and ultrasonic cleaning]. [Mention the validated parking in the rear or facility comfort].",
             language: "en",
             lengthCategory: ReviewLength.SHORT,
             targetedService: "Routine Hygiene",
-            providerUsed: "GROQ",
-            modelUsed: "llama-3.1-70b-versatile",
-            timesServed: 8,
-            timesCopied: 5,
+            providerUsed: "DETERMINISTIC",
+            modelUsed: "neutral-writing-assistant-v2",
+            timesServed: 0,
+            timesCopied: 0,
           },
         ],
       },
     },
   });
 
-  console.log(`Created demo client business: ${business.name} (slug: ${business.slug})`);
+  console.log(`Configured synthetic demo business: ${business.name} (slug: ${business.slug})`);
   console.log("Database seed completed successfully.");
 }
 
@@ -112,4 +123,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-

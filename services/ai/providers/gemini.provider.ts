@@ -1,5 +1,6 @@
 import { IAIService, GenerateReviewParams, GeneratedReviewOutput } from "../ai-provider.interface";
 import { PromptBuilder } from "../prompt-builder";
+import { AIOutputValidator } from "../ai-output-validator";
 
 export class GeminiProvider implements IAIService {
   readonly providerName = "GEMINI" as const;
@@ -49,7 +50,7 @@ export class GeminiProvider implements IAIService {
 
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(`Gemini API error [${res.status}]: ${errorText}`);
+        throw new Error(`Gemini API error [${res.status}]: ${errorText.slice(0, 150)}`);
       }
 
       const data = await res.json();
@@ -58,10 +59,12 @@ export class GeminiProvider implements IAIService {
         throw new Error("Empty candidate payload received from Gemini");
       }
 
-      const parsed = JSON.parse(rawText);
+      // Validate output structure and policy compliance
+      const validated = AIOutputValidator.parseAndValidate(rawText);
+
       return {
-        reviewText: parsed.reviewText || rawText,
-        targetedService: parsed.targetedService,
+        reviewText: validated.reviewText,
+        targetedService: validated.targetedService,
         provider: "GEMINI",
         model: this.modelName,
         latencyMs: Date.now() - startTime,
@@ -71,4 +74,3 @@ export class GeminiProvider implements IAIService {
     }
   }
 }
-

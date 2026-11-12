@@ -87,3 +87,4 @@ During this independent audit, two critical security defects were identified and
 - **Zero PII Storage:** No customer names, phone numbers, email addresses, or raw IP addresses are ever captured or stored.
 - **IP Anonymization:** Raw IP addresses are combined with a rotating daily salt (`YYYY-MM-DD-reviewflow-salt`) and hashed using SHA-256 before storing in `AnalyticsEvent`.
 - **Compliance:** Full compliance with GDPR, CCPA, and ePrivacy Directive without requiring intrusive cookie consent banners.
+

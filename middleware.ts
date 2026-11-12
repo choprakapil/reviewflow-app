@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
-import { rateLimit, RateLimitPresets } from "@/lib/rate-limit";
+import { rateLimit, RateLimitPresets, extractClientIp } from "@/lib/rate-limit";
+import { getAuthSecret } from "@/lib/auth-secret";
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const rawIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
+  const clientIp = extractClientIp(req.headers);
 
   // Rate limit public QR landing pages
   if (pathname.startsWith("/r/")) {
-    const rl = await rateLimit(`qr:${rawIp}`, RateLimitPresets.QR_LANDING);
+    const rl = await rateLimit(`qr:${clientIp}`, RateLimitPresets.QR_LANDING);
     if (!rl.success) {
       return new NextResponse("Too Many Requests", {
         status: 429,
@@ -40,7 +41,7 @@ export async function middleware(req: NextRequest) {
   // 2. Check for authenticated session token
   const token = await getToken({
     req,
-    secret: process.env.NEXTAUTH_SECRET || "dev-insecure-secret-for-local-testing-only-replace-in-production-12345",
+    secret: getAuthSecret(),
   });
 
   // 3. Protect all other /admin/* routes

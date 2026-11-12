@@ -1,5 +1,6 @@
 import { IAIService, GenerateReviewParams, GeneratedReviewOutput } from "../ai-provider.interface";
 import { PromptBuilder } from "../prompt-builder";
+import { AIOutputValidator } from "../ai-output-validator";
 
 export class GroqProvider implements IAIService {
   readonly providerName = "GROQ" as const;
@@ -46,7 +47,7 @@ export class GroqProvider implements IAIService {
 
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(`Groq API error [${res.status}]: ${errorText}`);
+        throw new Error(`Groq API error [${res.status}]: ${errorText.slice(0, 150)}`);
       }
 
       const data = await res.json();
@@ -55,10 +56,12 @@ export class GroqProvider implements IAIService {
         throw new Error("Empty message choices received from Groq");
       }
 
-      const parsed = JSON.parse(content);
+      // Validate output structure and policy compliance
+      const validated = AIOutputValidator.parseAndValidate(content);
+
       return {
-        reviewText: parsed.reviewText || content,
-        targetedService: parsed.targetedService,
+        reviewText: validated.reviewText,
+        targetedService: validated.targetedService,
         provider: "GROQ",
         model: this.modelName,
         latencyMs: Date.now() - startTime,
@@ -68,4 +71,3 @@ export class GroqProvider implements IAIService {
     }
   }
 }
-

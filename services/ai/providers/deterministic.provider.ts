@@ -8,19 +8,20 @@ export class DeterministicProvider implements IAIService {
     const service =
       params.services.length > 0
         ? params.services[Math.floor(Math.random() * params.services.length)]
-        : "their services";
+        : "services";
 
     const fact =
       params.factualHighlights && params.factualHighlights.length > 0
-        ? ` ${params.factualHighlights[0]}.`
+        ? ` Note on amenities: ${params.factualHighlights[0]}.`
         : "";
 
-    // Deterministic rule-based template library
+    // Neutral, responsible, customizable writing assistance templates
+    // Strictly adheres to FTC 16 CFR Part 465 by providing bracketed drafts rather than fake testimonials
     const templates = [
-      `I had a wonderful experience with ${params.businessName} recently for ${service}. The entire team was professional, attentive, and made the whole process completely stress-free.${fact} Highly recommended!`,
-      `Outstanding visit to ${params.businessName}! From arrival to finish, their customer care was top-notch. Very satisfied with ${service} and will definitely be coming back.`,
-      `Great service and friendly atmosphere at ${params.businessName}. They took the time to explain everything clearly regarding ${service}.${fact} A fantastic local business.`,
-      `I rarely write reviews, but ${params.businessName} truly earned this one. Quick, reliable, and thorough care for ${service}. Five stars all the way!`,
+      `${params.businessName} — [Describe the ${service} you received]. [Add your personal observations regarding the staff, quality, and overall service]. [Share any recommendations or helpful tips for other customers].`,
+      `${params.businessName} — [Visit Summary]: [Note what brought you in and which service you received (${service})]. [Mention how the experience went and what stood out to you personally].${fact}`,
+      `${params.businessName} — [Service Feedback]: [Describe your experience with ${service}]. [Add what you would like other customers to know about your visit].`,
+      `${params.businessName} — [Customer Review Draft]: [State the reason for your visit and the service received]. [Add your genuine impressions on customer care, timeliness, and results].`,
     ];
 
     const selectedTemplate = templates[Math.floor(Math.random() * templates.length)];
@@ -29,9 +30,8 @@ export class DeterministicProvider implements IAIService {
       reviewText: selectedTemplate,
       targetedService: service,
       provider: "DETERMINISTIC",
-      model: "local-rule-engine-v1",
+      model: "neutral-writing-assistant-v2",
       latencyMs: Date.now() - startTime,
     };
   }
 }
-
