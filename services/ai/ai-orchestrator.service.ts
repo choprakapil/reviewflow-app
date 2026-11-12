@@ -148,7 +148,7 @@ export class AIOrchestrator {
     } catch (err: unknown) {
       const errorMsg = sanitizeErrorMessage(err instanceof Error ? err.message : String(err));
       logger.warn({ err: errorMsg, businessId }, "Groq AI failed. Cascading to Ollama/Deterministic...");
-      await this.logUsage(businessId, "GROQ", "llama-3.1-70b-versatile", 0, false, errorMsg);
+      await this.logUsage(businessId, "GROQ", this.groq.getModelName(), 0, false, errorMsg);
     }
 
     // Branch D: Ollama (if not already attempted in Branch A)

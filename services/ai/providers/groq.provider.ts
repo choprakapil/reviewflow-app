@@ -7,9 +7,13 @@ export class GroqProvider implements IAIService {
   private readonly apiKey: string;
   private readonly modelName: string;
 
-  constructor(apiKey?: string, modelName = "llama-3.1-70b-versatile") {
+  constructor(apiKey?: string, modelName?: string) {
     this.apiKey = apiKey || process.env.GROQ_API_KEY || "";
-    this.modelName = modelName;
+    this.modelName = modelName || process.env.GROQ_MODEL || "qwen/qwen3.8-27b";
+  }
+
+  getModelName(): string {
+    return this.modelName;
   }
 
   async generateSuggestion(params: GenerateReviewParams): Promise<GeneratedReviewOutput> {
@@ -22,7 +26,7 @@ export class GroqProvider implements IAIService {
     const userPrompt = PromptBuilder.buildUserPrompt(params);
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2,000ms timeout guard
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5,000ms timeout guard
 
     try {
       const endpoint = "https://api.groq.com/openai/v1/chat/completions";
@@ -47,7 +51,8 @@ export class GroqProvider implements IAIService {
 
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(`Groq API error [${res.status}]: ${errorText.slice(0, 150)}`);
+        const sanitized = errorText.replace(/gsk_[a-zA-Z0-9_\-]+/g, "[REDACTED_GROQ_KEY]");
+        throw new Error(`Groq API error [${res.status}]: ${sanitized.slice(0, 150)}`);
       }
 
       const data = await res.json();
