@@ -72,12 +72,13 @@ export class BusinessService {
             create: {
               preferredProvider: "GEMINI",
               modelName: "gemini-3.5-flash-lite",
-              reviewLength: "MEDIUM",
-              writingStyle: "NATURAL",
+              reviewLength: input.aiConfig?.reviewLength || "MEDIUM",
+              writingStyle: input.aiConfig?.writingStyle || "NATURAL",
               temperature: 0.7,
               autoReplenishPool: true,
-              poolTargetSize: 10,
-              askCustomerQuestions: false,
+              poolTargetSize: input.aiConfig?.poolTargetSize || 10,
+              customPromptInstructions: input.aiConfig?.customPromptInstructions || null,
+              askCustomerQuestions: input.aiConfig?.askCustomerQuestions ?? false,
             },
           },
           qrCode: {
@@ -209,7 +210,7 @@ export class BusinessService {
     // Verify ownership
     await this.getBusinessById(id, userId);
 
-    return await prisma.business.update({
+    const updated = await prisma.business.update({
       where: { id },
       data: {
         ...(input.name ? { name: input.name } : {}),
@@ -223,12 +224,46 @@ export class BusinessService {
         ...(input.keywords ? { keywords: input.keywords } : {}),
         ...(input.services ? { services: input.services } : {}),
         ...(input.factualHighlights ? { factualHighlights: input.factualHighlights } : {}),
+        ...(input.aiConfig
+          ? {
+              aiConfig: {
+                upsert: {
+                  create: {
+                    reviewLength: input.aiConfig.reviewLength || "MEDIUM",
+                    writingStyle: input.aiConfig.writingStyle || "NATURAL",
+                    customPromptInstructions: input.aiConfig.customPromptInstructions || null,
+                    askCustomerQuestions: input.aiConfig.askCustomerQuestions ?? false,
+                    poolTargetSize: input.aiConfig.poolTargetSize || 10,
+                  },
+                  update: {
+                    ...(input.aiConfig.reviewLength ? { reviewLength: input.aiConfig.reviewLength } : {}),
+                    ...(input.aiConfig.writingStyle ? { writingStyle: input.aiConfig.writingStyle } : {}),
+                    ...(input.aiConfig.customPromptInstructions !== undefined
+                      ? { customPromptInstructions: input.aiConfig.customPromptInstructions }
+                      : {}),
+                    ...(input.aiConfig.askCustomerQuestions !== undefined
+                      ? { askCustomerQuestions: input.aiConfig.askCustomerQuestions }
+                      : {}),
+                    ...(input.aiConfig.poolTargetSize ? { poolTargetSize: input.aiConfig.poolTargetSize } : {}),
+                  },
+                },
+              },
+            }
+          : {}),
       },
       include: {
         aiConfig: true,
         qrCode: true,
       },
     });
+
+    if (input.regenerateSuggestions) {
+      // Refresh suggestion pool with new business parameters & AI style
+      await prisma.reviewSuggestion.deleteMany({ where: { businessId: id } });
+      await SuggestionPoolService.replenishPool(id, updated.aiConfig?.poolTargetSize || 10);
+    }
+
+    return updated;
   }
 
   /**

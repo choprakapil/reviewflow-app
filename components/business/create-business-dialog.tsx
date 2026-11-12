@@ -27,6 +27,10 @@ export function CreateBusinessDialog({ onSuccess }: CreateBusinessDialogProps) {
   const [serviceInput, setServiceInput] = useState("");
   const [services, setServices] = useState<string[]>([]);
 
+  // AI Configuration for this business
+  const [reviewLength, setReviewLength] = useState<"SHORT" | "MEDIUM" | "LONG">("MEDIUM");
+  const [writingStyle, setWritingStyle] = useState<"NATURAL" | "PROFESSIONAL" | "ENTHUSIASTIC" | "SIMPLE">("NATURAL");
+
   function addKeyword() {
     if (keywordInput.trim() && !keywords.includes(keywordInput.trim())) {
       setKeywords([...keywords, keywordInput.trim()]);
@@ -84,6 +88,10 @@ export function CreateBusinessDialog({ onSuccess }: CreateBusinessDialogProps) {
           googlePlaceId: val.placeId || undefined,
           keywords,
           services,
+          aiConfig: {
+            reviewLength,
+            writingStyle,
+          },
         }),
       });
 
@@ -304,6 +312,45 @@ export function CreateBusinessDialog({ onSuccess }: CreateBusinessDialogProps) {
                       </button>
                     </span>
                   ))}
+                </div>
+              </div>
+
+              {/* Row: AI Review Settings for this Business */}
+              <div className="p-4 bg-zinc-50 dark:bg-zinc-800/40 rounded-2xl border border-zinc-200 dark:border-zinc-700/60 space-y-3">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-900 dark:text-white">
+                  <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                  <span>AI Review Generation Tuning</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-medium text-zinc-500 mb-1">
+                      Review Length
+                    </label>
+                    <select
+                      value={reviewLength}
+                      onChange={(e) => setReviewLength(e.target.value as "SHORT" | "MEDIUM" | "LONG")}
+                      className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-600"
+                    >
+                      <option value="SHORT">Short (1-2 sentences)</option>
+                      <option value="MEDIUM">Medium (2-3 sentences)</option>
+                      <option value="LONG">Long (3-4 sentences)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-zinc-500 mb-1">
+                      Writing Style
+                    </label>
+                    <select
+                      value={writingStyle}
+                      onChange={(e) => setWritingStyle(e.target.value as "NATURAL" | "PROFESSIONAL" | "ENTHUSIASTIC" | "SIMPLE")}
+                      className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-600"
+                    >
+                      <option value="NATURAL">Natural &amp; Conversational</option>
+                      <option value="PROFESSIONAL">Professional &amp; Polished</option>
+                      <option value="ENTHUSIASTIC">Enthusiastic &amp; High Praise</option>
+                      <option value="SIMPLE">Simple &amp; Direct</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 

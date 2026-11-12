@@ -27,6 +27,13 @@ interface BusinessItem {
   googleReviewUrl: string;
   keywords?: string[] | unknown;
   services?: string[] | unknown;
+  aiConfig?: {
+    reviewLength?: "SHORT" | "MEDIUM" | "LONG";
+    writingStyle?: "NATURAL" | "PROFESSIONAL" | "ENTHUSIASTIC" | "SIMPLE";
+    customPromptInstructions?: string | null;
+    askCustomerQuestions?: boolean;
+    poolTargetSize?: number;
+  } | null;
   qrCode?: {
     permanentShortUrl: string;
     isActive: boolean;

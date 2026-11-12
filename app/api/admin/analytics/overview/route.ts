@@ -6,6 +6,13 @@ import { AnalyticsService } from "@/services/analytics.service";
 export async function GET(req: NextRequest) {
   try {
     const { userId } = await authenticateAdmin(req);
+    const { searchParams } = new URL(req.url);
+    const businessId = searchParams.get("businessId");
+
+    if (businessId && businessId !== "all") {
+      const data = await AnalyticsService.getBusinessDetailedAnalytics(businessId, userId);
+      return ApiResponse.success(data);
+    }
 
     const overview = await AnalyticsService.getPortfolioOverview(userId);
     return ApiResponse.success(overview);
