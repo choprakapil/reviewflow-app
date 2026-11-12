@@ -26,8 +26,9 @@ The application successfully eliminates the primary bottleneck in local reputati
 | Database & ORM Engine                 | PostgreSQL 16 schema + Prisma Client      |
 | Specialized AI Skills Library         | 59 Skills created in .agents/skills/      |
 | Engineering Standards Documentation   | 15 Standard specifications in docs/       |
+| Independent Audit Reports             | 11 Audit reports in docs/AUDIT/           |
 | Production Routes Compiled            | 20 Routes (Static + Dynamic Server API)   |
-| Automated Unit / Integration Tests    | 13/13 Passing (0 Failures, Vitest runner) |
+| Automated Unit / Integration Tests    | 28/28 Passing (0 Failures, Vitest runner) |
 | Production Build Status               | Clean compile (`next build` exited code 0)|
 +-----------------------------------------------------------------------------------+
 ```
@@ -38,13 +39,13 @@ The application successfully eliminates the primary bottleneck in local reputati
 
 #### 2.1 Actual UI Screens Delivered
 1. **Public Home / Marketing Gateway (`/`):** Hero presentation of dynamic QR technology, feature cards, policy transparency overview, and navigation to agency portal.
-2. **Agency Command Center Sign-In (`/login`):** Centered card layout with email, password, validation error toasts, and demo credentials helper.
-3. **Agency Overview Dashboard (`/dashboard`):** 4 KPI summary cards (Active Businesses, Scans, Suggestion Copies, Google Redirects), live Gemini/Groq engine health pulse, quick business directory, and action links.
-4. **Client Establishments Catalog (`/businesses`):** Real-time client table, live search filter, active vs. archived status tabs, one-click QR preview, pause/archive actions, and new client onboarding dialog.
+2. **Agency Command Center Sign-In (`/admin/login`):** Centered card layout with email, password, validation error toasts, and demo credentials helper.
+3. **Agency Overview Dashboard (`/admin/dashboard`):** 4 KPI summary cards (Active Businesses, Scans, Suggestion Copies, Google Redirects), live Gemini/Groq engine health pulse, quick business directory, and action links.
+4. **Client Establishments Catalog (`/admin/businesses`):** Real-time client table, live search filter, active vs. archived status tabs, one-click QR preview, pause/archive actions, and new client onboarding dialog.
 5. **New Business Onboarding Modal:** Multi-field modal with inline Google review URL validation, Place ID extraction, interactive service tag inputs, and SEO keyword pills.
-6. **Dynamic QR Studio & Print Center (`/qr-studio`):** Real-time interactive QR customizer, foreground/background color pickers, permanent slug preview, vector SVG download, 1024x1024 PNG download, and printable countertop table tent layout.
-7. **Reputation Telemetry & Analytics (`/analytics`):** Real-time conversion funnel visualization (QR Scans -> Suggestions Copied -> Google Maps Redirects), conversion rate calculation, and privacy notice.
-8. **Agency Settings & AI Vault (`/settings`):** Encrypted input fields for Google Gemini and Groq API keys, default review length and tone dropdowns, and runtime diagnostics.
+6. **Dynamic QR Studio & Print Center (`/admin/qr-studio`):** Real-time interactive QR customizer, foreground/background color pickers, permanent slug preview, vector SVG download, 1024x1024 PNG download, and printable countertop table tent layout.
+7. **Reputation Telemetry & Analytics (`/admin/analytics`):** Real-time conversion funnel visualization (QR Scans -> Suggestions Copied -> Google Maps Redirects), conversion rate calculation, and privacy notice.
+8. **Agency Settings & AI Vault (`/admin/settings`):** Encrypted input fields for Google Gemini and Groq API keys, default review length and tone dropdowns, and runtime diagnostics.
 9. **Public Mobile Customer Landing Page (`/r/[slug]`):** Ultra-fast (< 1s) customer funnel with verified logo monogram, business name/category, editable review suggestion card, "Try another suggestion" rotation, 56px sticky primary CTA **"Copy Review & Open Google"**, and Google policy compliance footer.
 10. **Manual Copy Fallback Sheet:** Slide-up modal triggered if high-security mobile browsers deny programmatic clipboard write, ensuring 100% of users can copy and proceed to Google.
 11. **System Health Check Endpoint (`/api/health`):** Operational status check reporting service health, uptime, and runtime environment.

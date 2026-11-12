@@ -10,7 +10,10 @@ export async function POST(
   try {
     const { id } = await params;
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-    const userId = (token?.id as string) || "usr_agency_admin_001";
+    if (!token?.id) {
+      return ApiResponse.error("Authentication required to access administrative APIs", "UNAUTHORIZED", 401);
+    }
+    const userId = token.id as string;
 
     const archived = await BusinessService.archiveBusiness(id, userId);
     return ApiResponse.success(archived);

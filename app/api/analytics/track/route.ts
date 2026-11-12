@@ -1,11 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { rateLimit, RateLimitPresets } from "@/lib/rate-limit";
 import crypto from "crypto";
 
 const DAILY_SALT = new Date().toISOString().slice(0, 10) + "-reviewflow-salt";
 
 export async function POST(req: NextRequest) {
   try {
+    const rawIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
+
+    // Rate limiting defense
+    const rl = await rateLimit(`track:${rawIp}`, RateLimitPresets.TRACKING_BEACON);
+    if (!rl.success) {
+      return new NextResponse(null, {
+        status: 429,
+        headers: {
+          "Retry-After": String(Math.max(1, rl.reset - Math.floor(Date.now() / 1000))),
+        },
+      });
+    }
+
     let body: {
       businessSlug?: string;
       eventType?: string;
@@ -35,7 +49,6 @@ export async function POST(req: NextRequest) {
     }
 
     // IP Anonymization: Hash with daily salt
-    const rawIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
     const hashedIp = crypto.createHash("sha256").update(rawIp + DAILY_SALT).digest("hex").slice(0, 32);
 
     // Geo-IP extraction from edge headers

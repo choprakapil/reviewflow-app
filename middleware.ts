@@ -1,9 +1,26 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { rateLimit, RateLimitPresets } from "@/lib/rate-limit";
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const rawIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
+
+  // Rate limit public QR landing pages
+  if (pathname.startsWith("/r/")) {
+    const rl = await rateLimit(`qr:${rawIp}`, RateLimitPresets.QR_LANDING);
+    if (!rl.success) {
+      return new NextResponse("Too Many Requests", {
+        status: 429,
+        headers: {
+          "Retry-After": String(Math.max(1, rl.reset - Math.floor(Date.now() / 1000))),
+          "X-RateLimit-Limit": String(rl.limit),
+          "X-RateLimit-Remaining": String(rl.remaining),
+        },
+      });
+    }
+  }
 
   // 1. Allow public routes without authentication
   if (
@@ -53,5 +70,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*"],
+  matcher: ["/admin/:path*", "/api/admin/:path*", "/r/:path*"],
 };

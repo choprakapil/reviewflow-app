@@ -12,7 +12,10 @@ export async function GET(
   try {
     const { id: businessId } = await params;
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-    const userId = (token?.id as string) || "usr_agency_admin_001";
+    if (!token?.id) {
+      return ApiResponse.error("Authentication required to access administrative APIs", "UNAUTHORIZED", 401);
+    }
+    const userId = token.id as string;
 
     const business = await BusinessService.getBusinessById(businessId, userId);
     const origin = req.nextUrl.origin || "http://localhost:3000";
@@ -50,7 +53,10 @@ export async function POST(
   try {
     const { id: businessId } = await params;
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-    const userId = (token?.id as string) || "usr_agency_admin_001";
+    if (!token?.id) {
+      return ApiResponse.error("Authentication required to access administrative APIs", "UNAUTHORIZED", 401);
+    }
+    const userId = token.id as string;
 
     await BusinessService.getBusinessById(businessId, userId);
 

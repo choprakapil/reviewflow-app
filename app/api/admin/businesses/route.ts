@@ -8,7 +8,10 @@ import { BusinessStatus } from "@prisma/client";
 export async function GET(req: NextRequest) {
   try {
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-    const userId = (token?.id as string) || "usr_agency_admin_001";
+    if (!token?.id) {
+      return ApiResponse.error("Authentication required to access administrative APIs", "UNAUTHORIZED", 401);
+    }
+    const userId = token.id as string;
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status") as BusinessStatus | undefined;
@@ -24,7 +27,10 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-    const userId = (token?.id as string) || "usr_agency_admin_001";
+    if (!token?.id) {
+      return ApiResponse.error("Authentication required to access administrative APIs", "UNAUTHORIZED", 401);
+    }
+    const userId = token.id as string;
 
     const body = await req.json();
     const validatedData = CreateBusinessSchema.parse(body);
