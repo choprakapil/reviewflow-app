@@ -18,6 +18,9 @@
 .env
 !.env.example
 
+# Uploaded Assets & Test Artifacts
+/public/uploads/
+
 # Logs
 npm-debug.log*
 yarn-debug.log*

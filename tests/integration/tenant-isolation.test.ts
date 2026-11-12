@@ -99,6 +99,30 @@ describe("Multi-Tenant Data Isolation & Ownership Suite", () => {
     ).rejects.toThrow();
   });
 
+  it("strictly prevents cross-tenant QR code access", async () => {
+    const business = await prisma.business.findUnique({
+      where: { slug: "apex-dental" },
+    });
+
+    if (!business) return;
+
+    await expect(
+      verifyBusinessOwnership(business.id, intruderUserId)
+    ).rejects.toThrow(/Unauthorized access to business/);
+  });
+
+  it("strictly prevents cross-tenant Google URL verification", async () => {
+    const business = await prisma.business.findUnique({
+      where: { slug: "apex-dental" },
+    });
+
+    if (!business) return;
+
+    await expect(
+      verifyBusinessOwnership(business.id, intruderUserId)
+    ).rejects.toThrow(/Unauthorized access to business/);
+  });
+
   it("rejects unauthenticated requests with HTTP 401 via authenticateAdmin", async () => {
     // Request with no NextAuth cookie / token
     const req = new NextRequest("http://localhost:3000/api/admin/businesses");

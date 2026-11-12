@@ -24,7 +24,7 @@
 | **10. Privacy & Analytics** | 100 / 100 | A+ | **READY** | Server-keyed HMAC daily rotating salt IP hashing, zero consumer PII, 16KB body cap, non-blocking beacon |
 | **11. Rate Limiting & Abuse**| 99 / 100 | A+ | **READY** | Spoofing-resistant edge IP extraction, bounded LRU cache (10,000 entries), token bucket + Upstash Redis |
 | **12. Error Observability** | 97 / 100 | A+ | **READY** | Structured Pino JSON logging with request IDs and sanitized error envelopes |
-| **13. Testing & Automation** | 100 / 100 | A+ | **READY** | 15 test suites, 73/73 tests passing (100% pass rate) in Vitest, ESLint clean |
+| **13. Testing & Automation** | 100 / 100 | A+ | **READY** | 15 test suites, 75/75 tests passing (100% pass rate) in Vitest, ESLint clean |
 | **14. Build & Type Safety** | 100 / 100 | A+ | **READY** | TypeScript strict mode, 0 compiler errors, Next.js production build passes (17 static pages, 23 routes) |
 | **15. Documentation System**| 100 / 100 | A+ | **READY** | 15 engineering standard docs + 17 independent audit reports + Agency Operations Manual + Maintenance Runbook |
 | **16. Deployment Orchestration**| 97 / 100 | A+ | **PENDING SECRETS** | Standalone production artifact ready; awaiting live production cloud credentials |
@@ -37,12 +37,13 @@
 Before flipping the production DNS record to live traffic:
 - [x] TypeScript compiler passes with zero errors (`tsc --noEmit`).
 - [x] ESLint validation passes with zero warnings or errors (`npm run lint`).
-- [x] All 73 unit and integration tests pass cleanly (`vitest run`).
+- [x] All 75 unit and integration tests pass cleanly (`vitest run`).
 - [x] Production Next.js build succeeds with optimized static and dynamic routes (23 total routes).
-- [x] Database synchronized and seeded with secure administrator credentials (no hardcoded credentials).
+- [x] Database synchronized with versioned Prisma baseline migration (`prisma/migrations/20261112000000_init_database_schema/migration.sql`).
 - [x] Database-backed authentication verified with bcrypt hashing and active status checks.
-- [x] Multi-tenant ownership verification active on all administrative endpoints.
+- [x] Multi-tenant ownership verification active on all administrative endpoints (including logo upload and QR code access).
 - [x] AI review draft generation certified compliant with FTC 16 CFR Part 465 (neutral writing assistance with bracketed placeholders).
+- [x] Logo upload restricted to safe binary raster formats (PNG, JPEG, WebP) with binary magic byte validation.
 - [x] Google Review URL domain whitelist active and preventing open redirects.
 - [x] Anti-gating verification complete: 100% of QR scans provide unrestricted access to Google review URL.
 - [x] Daily HMAC salt IP pseudonymization verified with server-secret key derivation.

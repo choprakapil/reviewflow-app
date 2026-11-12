@@ -124,3 +124,4 @@ curl -s -H "Authorization: Bearer $UPSTASH_REDIS_REST_TOKEN" \
 1. Generate a new administrator password.
 2. Update `ADMIN_BOOTSTRAP_PASSWORD` in your secret store.
 3. Re-run `npx tsx prisma/seed.ts` or update the admin's password securely via `/api/admin/profile/password`.
+

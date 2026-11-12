@@ -1,5 +1,12 @@
 export const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
-export const ALLOWED_MIME_TYPES = ["image/png", "image/jpeg", "image/svg+xml", "image/webp"];
+
+/**
+ * PRODUCTION HARDENING:
+ * SVG uploads are strictly prohibited to eliminate 100% of XML/SVG script injection,
+ * DOM XSS, and XML External Entity (XXE) attack surfaces.
+ * Only verified binary raster images (PNG, JPEG, WebP) are permitted.
+ */
+export const ALLOWED_MIME_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
 export function verifyMagicBytes(buffer: Buffer, mimeType: string): boolean {
   if (buffer.length < 4) return false;
@@ -27,21 +34,6 @@ export function verifyMagicBytes(buffer: Buffer, mimeType: string): boolean {
     return isRiff && isWebp;
   }
 
-  // SVG: Must be textual XML containing <svg
-  if (mimeType === "image/svg+xml") {
-    const text = buffer.toString("utf-8", 0, Math.min(buffer.length, 1024)).toLowerCase();
-    return text.includes("<svg") || (text.includes("<?xml") && text.includes("<svg"));
-  }
-
   return false;
 }
 
-export function sanitizeSvg(svgContent: string): string {
-  return svgContent
-    // Remove <script> tags and content
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-    // Remove inline event handlers (onload, onerror, onclick, etc.)
-    .replace(/\son\w+\s*=\s*(?:'[^']*'|"[^"]*"|[^\s>]+)/gi, "")
-    // Remove javascript: URLs
-    .replace(/(href|xlink:href)\s*=\s*['"]\s*javascript:[^'"]*['"]/gi, "");
-}

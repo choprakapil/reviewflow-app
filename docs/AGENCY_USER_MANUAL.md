@@ -85,3 +85,4 @@ ReviewFlow tracks the conversion funnel through privacy-preserving daily-hashed 
 4. **Google Redirects (`GOOGLE_REDIRECT`):** Successful launches into the business's Google Maps review interface.
 
 **Target Benchmark:** A healthy, well-placed ReviewFlow setup converts **40% to 65%** of physical QR scans into Google Redirect clicks.
+

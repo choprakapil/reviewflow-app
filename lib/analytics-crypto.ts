@@ -12,6 +12,7 @@ import crypto from "crypto";
 export function getDailyKeyedSalt(dateString?: string): string {
   const utcDate = dateString || new Date().toISOString().slice(0, 10);
   const serverSecret =
+    process.env.ANALYTICS_HASH_SECRET ||
     process.env.ANALYTICS_SALT_SECRET ||
     process.env.NEXTAUTH_SECRET ||
     "fallback-telemetry-server-key-rotate-in-production";

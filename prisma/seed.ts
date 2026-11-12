@@ -7,34 +7,48 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Seeding initial database...");
 
-  // 1. Create or Update Super Admin User
-  // Administrator password MUST be supplied via ADMIN_BOOTSTRAP_PASSWORD or secure random bootstrap
-  const bootstrapPassword =
-    process.env.ADMIN_BOOTSTRAP_PASSWORD ||
-    (process.env.NODE_ENV === "production"
-      ? crypto.randomBytes(16).toString("hex")
-      : "AdminPass123!");
-
-  const adminPasswordHash = await bcrypt.hash(bootstrapPassword, 10);
-  const adminUser = await prisma.user.upsert({
+  // 1. Create Super Admin User (if not already existing)
+  // Ensures existing administrator passwords are NEVER silently reset on re-seed
+  const existingAdmin = await prisma.user.findUnique({
     where: { email: "admin@reviewflow.io" },
-    update: {
-      passwordHash: adminPasswordHash,
-      isActive: true,
-    },
-    create: {
-      id: "usr_agency_admin_001",
-      email: "admin@reviewflow.io",
-      passwordHash: adminPasswordHash,
-      fullName: "Super Agency Admin",
-      role: Role.SUPER_ADMIN,
-      isActive: true,
-    },
   });
 
-  console.log(`Configured Super Admin user account: ${adminUser.email}`);
+  let adminUser;
+  if (!existingAdmin) {
+    const bootstrapPassword =
+      process.env.ADMIN_BOOTSTRAP_PASSWORD ||
+      (process.env.NODE_ENV === "production"
+        ? crypto.randomBytes(16).toString("hex")
+        : "AdminPass123!");
 
-  // 2. Create Demo Business: Apex Cosmetic Dental Studio (Identified Synthetic Demo)
+    const adminPasswordHash = await bcrypt.hash(bootstrapPassword, 10);
+    adminUser = await prisma.user.create({
+      data: {
+        id: "usr_agency_admin_001",
+        email: "admin@reviewflow.io",
+        passwordHash: adminPasswordHash,
+        fullName: "Super Agency Admin",
+        role: Role.SUPER_ADMIN,
+        isActive: true,
+      },
+    });
+    console.log(`Created Super Admin user account: ${adminUser.email}`);
+  } else {
+    adminUser = existingAdmin;
+    console.log(`Preserved existing Super Admin user account: ${adminUser.email} (password hash untouched)`);
+  }
+
+  // 2. Demo Business Seeding Guard (Prevents synthetic test data from entering production)
+  const shouldSeedDemo =
+    process.env.NODE_ENV !== "production" || process.env.SEED_DEMO_DATA === "true";
+
+  if (!shouldSeedDemo) {
+    console.log("Production environment detected: Skipping synthetic demo business creation.");
+    console.log("Database seed completed successfully.");
+    return;
+  }
+
+  // Create Demo Business: Apex Cosmetic Dental Studio (Synthetic Demo for Staging/Dev)
   const businessSlug = "apex-dental";
   const business = await prisma.business.upsert({
     where: { slug: businessSlug },
