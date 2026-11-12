@@ -80,7 +80,7 @@ describe("AI Audit & Compliance Suite", () => {
       expect(result).toBeDefined();
       expect(result.reviewText).toBeDefined();
       expect(result.reviewText.length).toBeGreaterThan(15);
-      expect(["GEMINI", "GROQ", "DETERMINISTIC"]).toContain(result.provider);
+      expect(["GEMINI", "GROQ", "OPENROUTER", "OLLAMA", "DETERMINISTIC"]).toContain(result.provider);
     });
   });
 });

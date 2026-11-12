@@ -56,8 +56,19 @@ export class AIOrchestrator {
       };
     }
 
+    const isTestEnv = process.env.NODE_ENV === "test" || Boolean(process.env.VITEST);
+
+    const defaultOpenRouterKey = isTestEnv ? "" : process.env.OPENROUTER_API_KEY || "";
+    const defaultGeminiKey = isTestEnv ? "" : process.env.GEMINI_API_KEY || "";
+    const defaultGroqKey = isTestEnv ? "" : process.env.GROQ_API_KEY || "";
+
     const resolvedOpenRouterKey =
-      config.openRouterKey || process.env.OPENROUTER_API_KEY || "";
+      config.openRouterKey !== undefined ? config.openRouterKey : defaultOpenRouterKey;
+    const resolvedGeminiKey =
+      config.geminiKey !== undefined ? config.geminiKey : defaultGeminiKey;
+    const resolvedGroqKey =
+      config.groqKey !== undefined ? config.groqKey : defaultGroqKey;
+
     this.hasOpenRouterKey = Boolean(resolvedOpenRouterKey);
 
     this.openrouter = new OpenRouterProvider({
@@ -70,8 +81,8 @@ export class AIOrchestrator {
       model: config.ollamaModel || process.env.OLLAMA_MODEL,
     });
 
-    this.gemini = new GeminiProvider(config.geminiKey);
-    this.groq = new GroqProvider(config.groqKey);
+    this.gemini = new GeminiProvider(resolvedGeminiKey);
+    this.groq = new GroqProvider(resolvedGroqKey);
     this.deterministic = new DeterministicProvider();
   }
 

@@ -44,7 +44,7 @@ export class OpenRouterProvider implements IAIService {
         ? config.freeOnly
         : envFreeOnly !== "false";
 
-    this.timeoutMs = config?.timeoutMs ?? 8000;
+    this.timeoutMs = config?.timeoutMs ?? 25000;
     this.maxRetries = config?.maxRetries ?? 2;
     const base = config?.baseUrl || "https://openrouter.ai/api/v1";
     this.endpoint = `${base.replace(/\/$/, "")}/chat/completions`;
@@ -83,7 +83,7 @@ export class OpenRouterProvider implements IAIService {
       ],
       response_format: { type: "json_object" },
       temperature: 0.7,
-      max_tokens: 300,
+      max_tokens: 1500,
     });
 
     let lastError: Error | null = null;

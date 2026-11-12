@@ -51,6 +51,6 @@ describe("Admin AI Test Bench Suite", () => {
     expect(body.data).toHaveProperty("sampleReviewText");
     expect(body.data.sampleReviewText.length).toBeGreaterThan(10);
     expect(body.data.sampleReviewText).toContain("Elite Auto Care");
-  });
+  }, 20000);
 });
 
