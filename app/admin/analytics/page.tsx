@@ -11,9 +11,18 @@ import {
   Loader2,
   Building2,
   Calendar,
-  Laptop
+  Layers,
+  ArrowRight,
+  Sparkles,
+  Smartphone
 } from "lucide-react";
 import Link from "next/link";
+import { apiUrl } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page-header";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { KpiCard } from "@/components/ui/kpi-card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 interface BusinessBreakdownItem {
   id: string;
@@ -67,7 +76,7 @@ export default function AnalyticsPage() {
   useEffect(() => {
     async function loadBusinesses() {
       try {
-        const res = await fetch("/api/admin/businesses");
+        const res = await fetch(apiUrl("/api/admin/businesses"));
         const json = await res.json();
         if (json.success) {
           setBusinesses(json.data);
@@ -86,8 +95,8 @@ export default function AnalyticsPage() {
       try {
         const url =
           selectedBusinessId === "all"
-            ? "/api/admin/analytics/overview"
-            : `/api/admin/analytics/overview?businessId=${selectedBusinessId}`;
+            ? apiUrl("/api/admin/analytics/overview")
+            : apiUrl(`/api/admin/analytics/overview?businessId=${selectedBusinessId}`);
 
         const res = await fetch(url);
         const json = await res.json();
@@ -104,263 +113,267 @@ export default function AnalyticsPage() {
   }, [selectedBusinessId]);
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* Header and Business Filter */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-blue-600" />
-            <span>Reputation Telemetry &amp; Conversion Analytics</span>
-          </h1>
-          <p className="text-sm text-zinc-500 mt-1">
-            Track in-store QR scans, review copy intent, and Google submission conversions per establishment
-          </p>
-        </div>
-
-        {/* Business Filter Selector */}
-        <div className="flex items-center gap-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-2 rounded-2xl shadow-sm self-start sm:self-center">
-          <Building2 className="w-4 h-4 text-blue-600 ml-2" />
-          <select
-            value={selectedBusinessId}
-            onChange={(e) => setSelectedBusinessId(e.target.value)}
-            className="px-3 py-1.5 text-xs font-semibold bg-transparent text-zinc-900 dark:text-white focus:outline-none cursor-pointer"
-          >
-            <option value="all">All Establishments (Agency Portfolio)</option>
-            {businesses.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+    <div className="space-y-8">
+      {/* Page Header with Business Filter Selector */}
+      <PageHeader
+        title="Reputation Telemetry & Conversion Analytics"
+        description="Monitor in-store QR scans, review copy intent, and Google submission conversions per establishment."
+        badge={<Badge variant="brand">Real-Time Telemetry</Badge>}
+        actions={
+          <div className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-subtle">
+            <Building2 className="w-4 h-4 text-indigo-600 shrink-0" />
+            <select
+              value={selectedBusinessId}
+              onChange={(e) => setSelectedBusinessId(e.target.value)}
+              aria-label="Filter telemetry by establishment"
+              className="text-xs font-semibold bg-transparent text-slate-800 focus:outline-none cursor-pointer pr-2"
+            >
+              <option value="all">All Establishments (Agency Portfolio)</option>
+              {businesses.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        }
+      />
 
       {isLoading ? (
-        <div className="py-24 flex flex-col items-center justify-center text-zinc-400 gap-2">
-          <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-          <span className="text-sm">Calculating establishment telemetry...</span>
+        <div className="py-24 flex flex-col items-center justify-center text-slate-400 gap-3">
+          <Loader2 className="w-7 h-7 animate-spin text-indigo-600" />
+          <span className="text-sm font-medium">Aggregating telemetry records...</span>
         </div>
       ) : (
         <div className="space-y-8">
           {/* Top Metrics Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm">
-              <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                Total QR Scans
-              </span>
-              <div className="mt-3 flex items-baseline gap-2">
-                <span className="text-3xl font-extrabold text-zinc-900 dark:text-white">
-                  {data?.totalScans.toLocaleString() || "0"}
-                </span>
-                <span className="text-xs text-zinc-400">All-time visits</span>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm">
-              <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                Suggestions Copied
-              </span>
-              <div className="mt-3 flex items-baseline gap-2">
-                <span className="text-3xl font-extrabold text-purple-600">
-                  {data?.totalCopies.toLocaleString() || "0"}
-                </span>
-                <span className="text-xs text-zinc-400">High intent drafts</span>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm">
-              <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                Google Redirects
-              </span>
-              <div className="mt-3 flex items-baseline gap-2">
-                <span className="text-3xl font-extrabold text-emerald-600">
-                  {data?.totalRedirects.toLocaleString() || "0"}
-                </span>
-                <span className="text-xs text-zinc-400">Review dialog opened</span>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm">
-              <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                Copy Conversion Rate
-              </span>
-              <div className="mt-3 flex items-baseline gap-2">
-                <span className="text-3xl font-extrabold text-blue-600">
-                  {data?.conversionRate || "0.0"}%
-                </span>
-                <span className="text-xs text-emerald-600 font-medium flex items-center">
-                  <TrendingUp className="w-3 h-3" />
-                  <span>Target &gt;40%</span>
-                </span>
-              </div>
-            </div>
+            <KpiCard
+              label="Total QR Scans"
+              value={data?.totalScans.toLocaleString() || "0"}
+              subtext="All-time customer scans"
+              icon={<QrCode className="w-5 h-5" />}
+              iconBgClass="bg-indigo-50 text-indigo-600"
+            />
+            <KpiCard
+              label="Suggestions Copied"
+              value={data?.totalCopies.toLocaleString() || "0"}
+              subtext="High-intent review drafts"
+              icon={<MousePointerClick className="w-5 h-5" />}
+              iconBgClass="bg-purple-50 text-purple-600"
+            />
+            <KpiCard
+              label="Google Redirects"
+              value={data?.totalRedirects.toLocaleString() || "0"}
+              subtext="Review dialogs opened"
+              icon={<ExternalLink className="w-5 h-5" />}
+              iconBgClass="bg-emerald-50 text-emerald-600"
+            />
+            <KpiCard
+              label="Conversion Rate"
+              value={`${data?.conversionRate || "0.0"}%`}
+              trend={{ value: "Target > 40%", isPositive: Number(data?.conversionRate || 0) >= 40 }}
+              subtext="Scan to clipboard intent"
+              icon={<TrendingUp className="w-5 h-5" />}
+              iconBgClass="bg-amber-50 text-amber-600"
+            />
           </div>
 
-          {/* Funnel Dropoff Step Bar */}
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
-            <h2 className="text-base font-bold text-zinc-900 dark:text-white flex items-center justify-between">
-              <span>Consumer Conversion Funnel</span>
+          {/* Consumer Conversion Funnel */}
+          <Card>
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-5">
+              <div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-indigo-600" />
+                  <span>Consumer Conversion Funnel</span>
+                </CardTitle>
+                <CardDescription>
+                  Drop-off tracking from in-store physical QR touchpoint to verified Google Review dialog
+                </CardDescription>
+              </div>
               {data?.business && (
-                <span className="text-xs text-blue-600 font-medium">
-                  Showing data for: {data.business.name}
-                </span>
+                <Badge variant="brand" className="self-start sm:self-auto">
+                  Filtering: {data.business.name}
+                </Badge>
               )}
-            </h2>
-
-            <div className="space-y-4">
+            </CardHeader>
+            <CardContent className="pt-6 space-y-6">
+              {/* Funnel Step 1 */}
               <div>
-                <div className="flex justify-between text-xs font-semibold text-zinc-600 dark:text-zinc-400 mb-1.5">
-                  <span className="flex items-center gap-1.5">
-                    <QrCode className="w-4 h-4 text-blue-600" />
-                    <span>Step 1: In-Store QR Code Scan</span>
+                <div className="flex justify-between items-center text-xs font-semibold text-slate-700 mb-2">
+                  <span className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-md bg-indigo-50 text-indigo-700 flex items-center justify-center text-[10px] font-bold">1</span>
+                    <span className="font-medium text-slate-900">In-Store QR Code Scan</span>
                   </span>
-                  <span>{data?.totalScans || 0} visits (100%)</span>
+                  <span className="font-mono text-slate-600">{data?.totalScans || 0} visits (100%)</span>
                 </div>
-                <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-3 rounded-full overflow-hidden">
-                  <div className="bg-blue-600 h-full rounded-full w-full" />
+                <div className="w-full bg-slate-100 h-3.5 rounded-full overflow-hidden p-0.5">
+                  <div className="bg-indigo-600 h-full rounded-full w-full transition-all duration-500" />
                 </div>
               </div>
 
+              {/* Funnel Step 2 */}
               <div>
-                <div className="flex justify-between text-xs font-semibold text-zinc-600 dark:text-zinc-400 mb-1.5">
-                  <span className="flex items-center gap-1.5">
-                    <MousePointerClick className="w-4 h-4 text-purple-600" />
-                    <span>Step 2: AI Suggestion Copied</span>
+                <div className="flex justify-between items-center text-xs font-semibold text-slate-700 mb-2">
+                  <span className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-md bg-purple-50 text-purple-700 flex items-center justify-center text-[10px] font-bold">2</span>
+                    <span className="font-medium text-slate-900">AI Suggestion Copied to Clipboard</span>
                   </span>
-                  <span>{data?.totalCopies || 0} copies ({data?.conversionRate || 0}%)</span>
+                  <span className="font-mono text-slate-600">{data?.totalCopies || 0} copies ({data?.conversionRate || 0}%)</span>
                 </div>
-                <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-3 rounded-full overflow-hidden">
+                <div className="w-full bg-slate-100 h-3.5 rounded-full overflow-hidden p-0.5">
                   <div
-                    className="bg-purple-600 h-full rounded-full"
-                    style={{ width: `${Math.min(100, data?.conversionRate || 0)}%` }}
+                    className="bg-purple-600 h-full rounded-full transition-all duration-500"
+                    style={{ width: `${Math.max(2, Math.min(100, data?.conversionRate || 0))}%` }}
                   />
                 </div>
               </div>
 
+              {/* Funnel Step 3 */}
               <div>
-                <div className="flex justify-between text-xs font-semibold text-zinc-600 dark:text-zinc-400 mb-1.5">
-                  <span className="flex items-center gap-1.5">
-                    <ExternalLink className="w-4 h-4 text-emerald-600" />
-                    <span>Step 3: Google Maps Review Transition</span>
+                <div className="flex justify-between items-center text-xs font-semibold text-slate-700 mb-2">
+                  <span className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-md bg-emerald-50 text-emerald-700 flex items-center justify-center text-[10px] font-bold">3</span>
+                    <span className="font-medium text-slate-900">Google Maps Review Dialog Transition</span>
                   </span>
-                  <span>{data?.totalRedirects || 0} redirects ({data?.conversionRate || 0}%)</span>
+                  <span className="font-mono text-slate-600">{data?.totalRedirects || 0} redirects ({data?.conversionRate || 0}%)</span>
                 </div>
-                <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-3 rounded-full overflow-hidden">
+                <div className="w-full bg-slate-100 h-3.5 rounded-full overflow-hidden p-0.5">
                   <div
-                    className="bg-emerald-600 h-full rounded-full"
-                    style={{ width: `${Math.min(100, data?.conversionRate || 0)}%` }}
+                    className="bg-emerald-600 h-full rounded-full transition-all duration-500"
+                    style={{ width: `${Math.max(2, Math.min(100, data?.conversionRate || 0))}%` }}
                   />
                 </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Breakdown Table (When "All Businesses" is selected) */}
           {selectedBusinessId === "all" && data?.businessesBreakdown && (
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm space-y-4">
-              <h2 className="text-base font-bold text-zinc-900 dark:text-white">
-                Establishment Performance Breakdown
-              </h2>
-
+            <Card>
+              <CardHeader className="border-b border-slate-100 pb-5">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-indigo-600" />
+                  <span>Establishment Performance Breakdown</span>
+                </CardTitle>
+                <CardDescription>
+                  Side-by-side comparison of review generation efficacy across managed client locations
+                </CardDescription>
+              </CardHeader>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-zinc-100 dark:border-zinc-800 text-zinc-400 uppercase tracking-wider font-semibold">
-                      <th className="py-3 px-4">Business</th>
-                      <th className="py-3 px-4">Category</th>
-                      <th className="py-3 px-4">In-Store Scans</th>
-                      <th className="py-3 px-4">Drafts Copied</th>
-                      <th className="py-3 px-4">Conversion Rate</th>
-                      <th className="py-3 px-4 text-right">Action</th>
+                    <tr className="border-b border-slate-100 bg-slate-50/60 text-slate-500 uppercase tracking-wider font-semibold">
+                      <th className="py-3 px-5">Establishment</th>
+                      <th className="py-3 px-5">Category</th>
+                      <th className="py-3 px-5">In-Store Scans</th>
+                      <th className="py-3 px-5">Drafts Copied</th>
+                      <th className="py-3 px-5">Conversion Rate</th>
+                      <th className="py-3 px-5 text-right">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800 text-zinc-700 dark:text-zinc-300">
+                  <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
                     {data.businessesBreakdown.map((biz) => (
-                      <tr key={biz.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30">
-                        <td className="py-3.5 px-4 font-semibold text-zinc-900 dark:text-white">
+                      <tr key={biz.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3.5 px-5 font-semibold text-slate-900">
                           {biz.name}
                         </td>
-                        <td className="py-3.5 px-4 text-zinc-500">
-                          {biz.category}
+                        <td className="py-3.5 px-5 text-slate-500">
+                          <Badge variant="neutral">{biz.category}</Badge>
                         </td>
-                        <td className="py-3.5 px-4 font-mono font-medium">
+                        <td className="py-3.5 px-5 font-mono text-slate-700">
                           {biz.totalScans}
                         </td>
-                        <td className="py-3.5 px-4 font-mono font-medium text-purple-600">
+                        <td className="py-3.5 px-5 font-mono text-purple-700 font-semibold">
                           {biz.totalCopies}
                         </td>
-                        <td className="py-3.5 px-4 font-mono font-bold text-blue-600">
-                          {biz.conversionRate}%
+                        <td className="py-3.5 px-5">
+                          <span className="font-mono font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
+                            {biz.conversionRate}%
+                          </span>
                         </td>
-                        <td className="py-3.5 px-4 text-right">
-                          <button
+                        <td className="py-3.5 px-5 text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => setSelectedBusinessId(biz.id)}
-                            className="text-xs font-semibold text-blue-600 hover:underline"
+                            className="text-indigo-600 hover:text-indigo-700 font-semibold"
                           >
-                            View Funnel &rarr;
-                          </button>
+                            <span>Inspect Funnel</span>
+                            <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                          </Button>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            </div>
+            </Card>
           )}
 
           {/* Live Recent Events Stream (When Specific Business is Selected) */}
           {selectedBusinessId !== "all" && data?.recentEvents && (
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm space-y-4">
-              <h2 className="text-base font-bold text-zinc-900 dark:text-white flex items-center justify-between">
-                <span>Recent Live In-Store Events</span>
-                <span className="text-xs font-normal text-zinc-400">Last 15 telemetry records</span>
-              </h2>
-
-              {data.recentEvents.length === 0 ? (
-                <p className="text-xs text-zinc-400 py-6 text-center">
-                  No scan or copy events recorded yet for this establishment.
-                </p>
-              ) : (
-                <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                  {data.recentEvents.map((evt) => (
-                    <div key={evt.id} className="py-2.5 flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={`w-2 h-2 rounded-full ${
-                            evt.eventType === "COPY_AND_REDIRECT_CLICK"
-                              ? "bg-purple-600"
-                              : evt.eventType === "QR_SCAN"
-                              ? "bg-blue-600"
-                              : "bg-emerald-600"
-                          }`}
-                        />
-                        <span className="font-semibold text-zinc-900 dark:text-white">
-                          {evt.eventType.replace(/_/g, " ")}
-                        </span>
-                        {(evt.browser || evt.os) && (
-                          <span className="text-zinc-400 text-[11px] hidden sm:inline">
-                            ({evt.browser || "Unknown"} on {evt.os || "Device"})
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-zinc-400 text-[11px] font-mono">
-                        {new Date(evt.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                  ))}
+            <Card>
+              <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-5">
+                <div>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Smartphone className="w-4 h-4 text-indigo-600" />
+                    <span>Recent Live In-Store Events</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Real-time non-PII telemetry events for this establishment
+                  </CardDescription>
                 </div>
-              )}
-            </div>
+                <Badge variant="neutral">Last 15 records</Badge>
+              </CardHeader>
+              <CardContent className="pt-4">
+                {data.recentEvents.length === 0 ? (
+                  <p className="text-xs text-slate-400 py-8 text-center">
+                    No scan or copy events recorded yet for this establishment.
+                  </p>
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {data.recentEvents.map((evt) => (
+                      <div key={evt.id} className="py-3 flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={`w-2.5 h-2.5 rounded-full ${
+                              evt.eventType === "COPY_AND_REDIRECT_CLICK"
+                                ? "bg-purple-600"
+                                : evt.eventType === "QR_SCAN"
+                                ? "bg-indigo-600"
+                                : "bg-emerald-600"
+                            }`}
+                          />
+                          <span className="font-semibold text-slate-800">
+                            {evt.eventType.replace(/_/g, " ")}
+                          </span>
+                          {(evt.browser || evt.os) && (
+                            <span className="text-slate-400 text-[11px] hidden sm:inline">
+                              • {evt.browser || "Unknown"} on {evt.os || "Device"}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-slate-500 text-[11px] font-mono bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
+                          {new Date(evt.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           )}
 
-          <div className="pt-2 flex items-center gap-2 text-xs text-zinc-500">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+          {/* Compliance & Privacy Footer */}
+          <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-subtle flex items-center gap-3 text-xs text-slate-600">
+            <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
             <span>
-              Zero-PII Compliance: IP addresses are salted and SHA-256 hashed daily. No customer tracking cookies or identities are recorded.
+              <strong>Zero-PII Compliance Invariant:</strong> Client IP addresses are salted with a daily cryptographic secret and SHA-256 hashed. No patron tracking cookies, names, or persistent identities are stored.
             </span>
           </div>
         </div>
       )}
-    </main>
+    </div>
   );
 }

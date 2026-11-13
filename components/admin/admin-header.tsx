@@ -2,88 +2,104 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { QrCode, LayoutDashboard, Building2, Sliders, BarChart3, Settings, LogOut } from "lucide-react";
+import { 
+  Menu, 
+  Sparkles, 
+  ShieldCheck, 
+  ExternalLink,
+  ChevronRight,
+  LogOut
+} from "lucide-react";
 import { signOut } from "next-auth/react";
-import { cn } from "@/lib/utils";
+import { apiUrl } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
-const NAV_ITEMS = [
-  { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-  { name: "Businesses", href: "/admin/businesses", icon: Building2 },
-  { name: "QR Studio", href: "/admin/qr-studio", icon: Sliders },
-  { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
-  { name: "Settings", href: "/admin/settings", icon: Settings },
-];
+interface AdminHeaderProps {
+  onMenuClick?: () => void;
+}
 
-export function AdminHeader() {
+export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
   const pathname = usePathname();
 
-  // If on login page, do not show admin navigation
+  // If on login page, do not render header
   if (pathname === "/admin/login") return null;
 
+  // Breadcrumb derivation
+  const segments = pathname
+    .split("/")
+    .filter(Boolean)
+    .filter((s) => s !== "admin");
+
+  const currentTitle = segments.length > 0 
+    ? segments[0].charAt(0).toUpperCase() + segments[0].slice(1).replace("-", " ")
+    : "Dashboard";
+
+  async function handleSignOut() {
+    try {
+      await signOut({ callbackUrl: apiUrl("/admin/login"), redirect: false });
+    } catch (e) {
+      console.warn("signOut error:", e);
+    }
+    document.cookie = "next-auth.session-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    document.cookie = "__Secure-next-auth.session-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    document.cookie = "next-auth.csrf-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    document.cookie = "__Host-next-auth.csrf-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    window.location.href = apiUrl("/admin/login");
+  }
+
   return (
-    <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo & Brand */}
-          <div className="flex items-center gap-8">
-            <Link href="/admin/dashboard" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold shadow-sm">
-                <QrCode className="w-5 h-5" />
-              </div>
-              <span className="font-bold text-lg tracking-tight text-zinc-900 dark:text-white">
-                ReviewFlow
-              </span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-semibold uppercase">
-                Agency
-              </span>
-            </Link>
+    <header className="h-16 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30">
+      {/* Left: Mobile Menu Trigger + Breadcrumb */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onMenuClick}
+          aria-label="Open mobile navigation"
+          className="lg:hidden p-2 text-slate-500 hover:text-slate-800 rounded-xl hover:bg-slate-100 transition-colors"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-1">
-              {NAV_ITEMS.map((item) => {
-                const isActive = pathname === item.href || (item.href !== "/admin/dashboard" && pathname.startsWith(item.href));
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                      isActive
-                        ? "bg-zinc-100 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-semibold"
-                        : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
-                    )}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{item.name}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
+        {/* Breadcrumb Navigation */}
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs">
+          <Link
+            href="/admin/dashboard"
+            className="text-slate-400 hover:text-slate-700 font-medium transition-colors"
+          >
+            Agency
+          </Link>
+          <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
+          <span className="font-semibold text-slate-900">{currentTitle}</span>
+        </nav>
+      </div>
 
-          {/* User Profile & Sign Out */}
-          <div className="flex items-center gap-3">
-            <div className="text-right hidden sm:block">
-              <div className="text-xs font-semibold text-zinc-900 dark:text-white">
-                Super Admin
-              </div>
-              <div className="text-[11px] text-zinc-500">
-                Agency Account
-              </div>
-            </div>
-
-            <button
-              onClick={() => signOut({ callbackUrl: "/admin/login" })}
-              className="p-2 text-zinc-500 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-              title="Sign Out"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
+      {/* Right: Quick actions & Environment status */}
+      <div className="flex items-center gap-3">
+        {/* Zero-Cost Active Badge */}
+        <div className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200/60">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+          <span>Zero-Cost AI Active</span>
         </div>
+
+        {/* View Live Test Portal shortcut */}
+        <Link
+          href="/r/apex-dental"
+          target="_blank"
+          className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 transition-all shadow-subtle"
+        >
+          <span>Live Demo QR</span>
+          <ExternalLink className="w-3 h-3 text-slate-400" />
+        </Link>
+
+        {/* Quick Sign Out Action */}
+        <button
+          onClick={handleSignOut}
+          title="Sign Out"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 rounded-xl border border-slate-200 hover:border-rose-200 transition-all"
+        >
+          <LogOut className="w-3.5 h-3.5 text-slate-500 hover:text-rose-600" />
+          <span className="hidden sm:inline">Sign Out</span>
+        </button>
       </div>
     </header>
   );
 }
-

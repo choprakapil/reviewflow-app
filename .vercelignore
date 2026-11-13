@@ -1,0 +1,11 @@
+node_modules
+.next
+.git
+*.zip
+Archive.zip
+coverage
+docs
+tests
+.agents
+*.tsbuildinfo
+

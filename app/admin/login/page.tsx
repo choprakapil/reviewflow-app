@@ -1,38 +1,46 @@
 import { Suspense } from "react";
 import { LoginForm } from "@/components/admin/login-form";
-import { QrCode, Shield } from "lucide-react";
+import { QrCode, ShieldCheck, Sparkles, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <Link href="/" className="inline-flex items-center gap-2 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold shadow-sm">
+        {/* Brand Icon */}
+        <Link href="/" className="inline-flex items-center gap-2.5 mb-5 group">
+          <div className="w-11 h-11 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-bold shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
             <QrCode className="w-6 h-6" />
           </div>
-          <span className="font-extrabold text-2xl tracking-tight text-zinc-900 dark:text-white">
+          <span className="font-extrabold text-2xl tracking-tight text-slate-900">
             ReviewFlow
           </span>
         </Link>
-        <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
+
+        <h1 className="text-xl font-bold tracking-tight text-slate-900">
           Agency Command Center
-        </h2>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-          Sign in to manage client businesses, QR codes & AI reviews
+        </h1>
+        <p className="mt-1.5 text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
+          Manage client Google review links, dynamic QR campaigns, and FTC-compliant AI draft generation.
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
-        <div className="bg-white dark:bg-zinc-900 py-8 px-6 sm:px-10 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-sm">
-          <Suspense fallback={<div className="h-48 flex items-center justify-center text-sm text-zinc-400">Loading sign in...</div>}>
+      <div className="mt-7 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-6 sm:px-9 border border-slate-200 rounded-3xl shadow-card space-y-6">
+          <Suspense fallback={<div className="h-44 flex items-center justify-center text-xs text-slate-400">Loading sign in...</div>}>
             <LoginForm />
           </Suspense>
 
-          <div className="mt-6 pt-6 border-t border-zinc-100 dark:border-zinc-800 text-center">
-            <div className="inline-flex items-center gap-1.5 text-xs text-zinc-500">
-              <Shield className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Multi-tenant encrypted agency session</span>
+          {/* Security & Multi-tenant Guarantee Footer */}
+          <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+            <div className="flex items-center gap-1.5 text-slate-500">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span>Multi-tenant Isolation</span>
+            </div>
+            <div className="flex items-center gap-1 text-indigo-600 font-medium">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Zero-Cost AI Engine</span>
             </div>
           </div>
         </div>
@@ -40,4 +48,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

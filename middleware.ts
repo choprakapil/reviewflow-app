@@ -46,7 +46,8 @@ export async function middleware(req: NextRequest) {
 
   // 3. Protect all other /admin/* routes
   if (pathname.startsWith("/admin") && !token) {
-    const loginUrl = new URL("/admin/login", req.url);
+    const loginUrl = req.nextUrl.clone();
+    loginUrl.pathname = "/admin/login";
     loginUrl.searchParams.set("callbackUrl", req.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);
   }

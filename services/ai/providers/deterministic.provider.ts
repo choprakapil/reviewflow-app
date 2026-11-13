@@ -10,24 +10,34 @@ export class DeterministicProvider implements IAIService {
         ? params.services[Math.floor(Math.random() * params.services.length)]
         : "services";
 
-    // When Customer Experience Questions are ON and customer provided details
+    const fact =
+      params.factualHighlights && params.factualHighlights.length > 0
+        ? ` Note on amenities: ${params.factualHighlights[0]}.`
+        : "";
+
+    // When Customer Experience Questions are ON and customer provided details,
+    // use strictly customer-provided information without fabricating anything.
     if (params.askCustomerQuestions && params.customerAnswers) {
       const answers = params.customerAnswers;
       const parts: string[] = [];
       if (answers.serviceReceived) {
-        parts.push(`I used ${params.businessName} for ${answers.serviceReceived} and had a great experience.`);
+        parts.push(`I visited for ${answers.serviceReceived}.`);
       } else {
-        parts.push(`Had an exceptional experience with ${params.businessName}.`);
+        parts.push(`[Describe the service or purpose of your visit].`);
       }
       if (answers.personalHighlight) {
-        parts.push(`Their team was ${answers.personalHighlight}.`);
-      } else if (params.keywords.length > 0) {
-        parts.push(`The staff was ${params.keywords[0].toLowerCase()} and very easy to work with.`);
+        parts.push(`${answers.personalHighlight}.`);
+      } else {
+        parts.push(`[Add your personal observations regarding the staff, quality, and overall service].`);
       }
-      parts.push("Highly recommend them to anyone looking for quality work!");
+      if (answers.visitContext) {
+        parts.push(`${answers.visitContext}.`);
+      } else {
+        parts.push(`[Share any recommendations or helpful tips for other customers].`);
+      }
 
       return {
-        reviewText: parts.join(" "),
+        reviewText: `${params.businessName} — ${parts.join(" ")}`,
         targetedService: answers.serviceReceived || service,
         provider: "DETERMINISTIC",
         model: "neutral-writing-assistant-v2",
@@ -35,13 +45,14 @@ export class DeterministicProvider implements IAIService {
       };
     }
 
-    // Default: Realistic, authentic customer review variations incorporating keywords & services
+    // Default: Customer Experience Questions OFF
+    // Neutral, responsible, customizable writing assistance templates
+    // Strictly adheres to FTC 16 CFR Part 465 by providing bracketed drafts rather than fake testimonials
     const templates = [
-      `Had a fantastic experience with ${params.businessName}! They helped us with ${service}, and their team was friendly, professional, and very easy to work with. Definitely recommend them to anyone!`,
-      `Really impressed by the quality of work from ${params.businessName}. Their staff is professional, responsive, and attentive to every detail during our ${service} project. A 5-star experience all around!`,
-      `${params.businessName} did an incredible job with ${service}. The entire process was smooth, communication was clear, and the team was a pleasure to work with. Highly recommended!`,
-      `Top-notch service from ${params.businessName}! If you are looking for reliable and expert ${service}, look no further. Friendly staff and exceptional results from start to finish.`,
-      `Working with ${params.businessName} for ${service} was a breeze. Prompt support, professional team, and great attention to detail. Very satisfied with the outcome!`,
+      `${params.businessName} — [Describe the ${service} you received]. [Add your personal observations regarding the staff, quality, and overall service]. [Share any recommendations or helpful tips for other customers].`,
+      `${params.businessName} — [Visit Summary]: [Note what brought you in and which service you received (${service})]. [Mention how the experience went and what stood out to you personally].${fact}`,
+      `${params.businessName} — [Service Feedback]: [Describe your experience with ${service}]. [Add what you would like other customers to know about your visit].`,
+      `${params.businessName} — [Customer Review Draft]: [State the reason for your visit and the service received]. [Add your genuine impressions on customer care, timeliness, and results].`,
     ];
 
     const selectedTemplate = templates[Math.floor(Math.random() * templates.length)];

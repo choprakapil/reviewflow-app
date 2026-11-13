@@ -258,9 +258,15 @@ export class BusinessService {
     });
 
     if (input.regenerateSuggestions) {
-      // Refresh suggestion pool with new business parameters & AI style
-      await prisma.reviewSuggestion.deleteMany({ where: { businessId: id } });
-      await SuggestionPoolService.replenishPool(id, updated.aiConfig?.poolTargetSize || 10);
+      // Refresh suggestion pool asynchronously in background so client save returns immediately
+      (async () => {
+        try {
+          await prisma.reviewSuggestion.deleteMany({ where: { businessId: id } });
+          await SuggestionPoolService.replenishPool(id, updated.aiConfig?.poolTargetSize || 10);
+        } catch (err) {
+          console.error(`Background regenerate pool error for ${id}:`, err);
+        }
+      })();
     }
 
     return updated;

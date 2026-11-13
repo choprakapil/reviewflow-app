@@ -16,6 +16,8 @@
 # Environment Variables
 .env*.local
 .env
+.env.production
+.env*.production
 !.env.example
 
 # Uploaded Assets & Test Artifacts
@@ -35,3 +37,4 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+.vercel
